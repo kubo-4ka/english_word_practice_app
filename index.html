@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="1">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>英単語 よみ・かき・リスニング</title>
+    <link rel="stylesheet" href="style.css?v=007" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand-block">
+        <p class="eyebrow">English Word Practice</p>
+        <h1>
+          <span class="title-full">英単語 よみ・かき・リスニング</span
+          ><span class="title-compact">英単語 よみ・かき・リスニング</span>
+        </h1>
+        <p class="subtitle">四択で、読む・書く・聞くをくり返し練習します。</p>
+      </div>
+      <label class="theme-picker">
+        <span class="theme-label">画面テーマ</span>
+        <select id="themeSelect" aria-label="画面テーマ">
+          <option value="1" selected>ライト</option>
+          <option value="2">パステルカラー</option>
+          <option value="3">レトロセピア</option>
+          <option value="4">グレースケール</option>
+          <option value="5">ダーク</option>
+        </select>
+      </label>
+    </header>
+
+    <nav class="tabs" aria-label="画面切り替え">
+      <button class="tab active" data-screen="home">ホーム</button>
+      <button class="tab" data-screen="practice">練習</button>
+      <button class="tab" data-screen="words">単語一覧</button>
+      <button class="tab" data-screen="history">履歴</button>
+      <button class="tab" data-screen="help">使い方</button>
+    </nav>
+
+    <div id="contentScroll" class="content-scroll">
+      <main>
+        <section id="screen-home" class="screen active">
+          <div class="hero card">
+            <div>
+              <span class="pill">小学生向け・基礎英単語</span>
+              <h2>今日の英単語練習を始めましょう</h2>
+              <p>
+                英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と自分で登録した単語から、10〜100問に挑戦できます。
+              </p>
+              <div class="hero-actions">
+                <button id="startRecommendedHome" class="primary">
+                  おすすめ設定で始める
+                </button>
+                <button class="secondary" data-go="practice">練習設定へ</button>
+              </div>
+            </div>
+            <div class="hero-stats">
+              <div>
+                <strong id="homeActiveWords">0</strong><span>出題対象単語</span>
+              </div>
+              <div>
+                <strong id="homeHistoryCount">0</strong
+                ><span>保存済み履歴</span>
+              </div>
+              <div>
+                <strong id="homeBestScore">--</strong><span>最高正答率</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="feature-grid">
+            <article class="card feature">
+              <span class="feature-icon">読</span>
+              <h3>読み</h3>
+              <p>英単語を見て、日本語の意味を四択で答えます。</p>
+            </article>
+            <article class="card feature">
+              <span class="feature-icon">書</span>
+              <h3>書き</h3>
+              <p>一文字欠落、連続二文字欠落、英単語選択を混ぜて練習します。</p>
+            </article>
+            <article class="card feature">
+              <span class="feature-icon">聴</span>
+              <h3>リスニング</h3>
+              <p>ブラウザの英語音声を聞いて、正しい英単語を選びます。</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="screen-practice" class="screen">
+          <div id="practiceSetup" class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Practice Settings</p>
+                <h2>練習設定</h2>
+              </div>
+              <button id="selectRecommended" class="secondary">
+                おすすめ設定
+              </button>
+            </div>
+
+            <div class="settings-grid">
+              <fieldset>
+                <legend>練習内容</legend>
+                <label
+                  ><input type="checkbox" name="mode" value="reading" checked />
+                  読み</label
+                >
+                <label
+                  ><input type="checkbox" name="mode" value="writing" checked />
+                  書き</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="mode"
+                    value="listening"
+                    checked
+                  />
+                  リスニング</label
+                >
+              </fieldset>
+
+              <fieldset id="writingLevels">
+                <legend>書きの段階</legend>
+                <label
+                  ><input
+                    type="checkbox"
+                    name="writingLevel"
+                    value="one"
+                    checked
+                  />
+                  一文字欠落</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="writingLevel"
+                    value="two"
+                    checked
+                  />
+                  連続二文字欠落</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="writingLevel"
+                    value="word"
+                    checked
+                  />
+                  英単語選択</label
+                >
+              </fieldset>
+
+              <fieldset>
+                <legend>出題元</legend>
+                <label
+                  ><input
+                    type="checkbox"
+                    name="source"
+                    value="preset"
+                    checked
+                  />
+                  プリセット</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="source"
+                    value="custom"
+                    checked
+                  />
+                  個別登録</label
+                >
+              </fieldset>
+
+              <div class="field-group">
+                <label for="questionCount">出題数</label>
+                <select id="questionCount">
+                  <option>10</option>
+                  <option>20</option>
+                  <option>30</option>
+                  <option>40</option>
+                  <option>50</option>
+                  <option>60</option>
+                  <option>70</option>
+                  <option>80</option>
+                  <option>90</option>
+                  <option>100</option>
+                </select>
+              </div>
+
+              <div class="field-group voice-setting">
+                <label for="voiceSelect">リスニング音声</label>
+                <div class="voice-controls">
+                  <select
+                    id="voiceSelect"
+                    aria-label="リスニングで使用する英語音声"
+                  >
+                    <option value="">英語音声を読み込み中...</option>
+                  </select>
+                  <button id="previewVoice" class="secondary" type="button">
+                    この音声を確認
+                  </button>
+                </div>
+                <p id="voiceStatus" class="note">
+                  この端末とブラウザで利用できる英語音声を表示します。
+                </p>
+              </div>
+            </div>
+
+            <fieldset class="topic-fieldset">
+              <legend>カテゴリ</legend>
+              <div id="topicChoices" class="choice-grid"></div>
+              <div class="inline-actions">
+                <button id="checkAllTopics" class="text-button">
+                  すべて選択
+                </button>
+                <button id="uncheckAllTopics" class="text-button">
+                  すべて解除
+                </button>
+              </div>
+            </fieldset>
+
+            <div class="start-row">
+              <p id="practiceAvailability" class="status-text"></p>
+              <button id="startPractice" class="primary large">練習開始</button>
+            </div>
+          </div>
+
+          <div id="quizArea" class="card hidden">
+            <div class="quiz-top">
+              <div>
+                <span id="quizModeBadge" class="pill">読み</span>
+                <span id="quizProgress">1 / 10</span>
+              </div>
+              <div class="score-mini">
+                正解 <strong id="quizCorrect">0</strong>
+              </div>
+            </div>
+            <div class="progress-track"><div id="progressBar"></div></div>
+            <div id="questionArea" class="question-area"></div>
+            <div id="answerChoices" class="answer-grid"></div>
+            <div id="feedback" class="feedback" aria-live="polite"></div>
+            <div class="quiz-actions">
+              <button id="quitQuiz" class="danger-outline">中断</button>
+              <button id="nextQuestion" class="primary hidden">次の問題</button>
+            </div>
+          </div>
+
+          <div id="resultArea" class="card hidden">
+            <p class="eyebrow">Result</p>
+            <h2>練習結果</h2>
+            <div class="result-score">
+              <strong id="resultPercent">0%</strong
+              ><span id="resultCount">0 / 0 問正解</span>
+            </div>
+            <div id="resultBreakdown" class="result-grid"></div>
+            <div class="inline-actions center">
+              <button id="retryPractice" class="primary">
+                同じ設定でもう一度
+              </button>
+              <button id="backToSetup" class="secondary">設定へ戻る</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-words" class="screen">
+          <div class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">My Words</p>
+                <h2>個別単語の登録</h2>
+              </div>
+            </div>
+            <div class="register-grid">
+              <label
+                >英単語<input
+                  id="customEnglish"
+                  type="text"
+                  maxlength="40"
+                  placeholder="例：rainbow"
+                  autocomplete="off"
+              /></label>
+              <label
+                >日本語<input
+                  id="customJapanese"
+                  type="text"
+                  maxlength="60"
+                  placeholder="例：虹"
+              /></label>
+              <label
+                >カテゴリ
+                <select id="customTopic"></select>
+              </label>
+            </div>
+            <div class="inline-actions">
+              <button id="previewCustom" class="secondary">音声を確認</button>
+              <button id="addCustom" class="primary">登録</button>
+              <span
+                id="customMessage"
+                class="status-text"
+                aria-live="polite"
+              ></span>
+            </div>
+            <p class="note">
+              日本語の自動取得には外部辞書APIを使わず、正確性と利用規約管理のため利用者入力としています。
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Word List</p>
+                <h2>単語一覧</h2>
+              </div>
+              <div class="inline-actions">
+                <button id="exportWords" class="secondary">CSV出力</button>
+                <button id="enableVisible" class="text-button">
+                  表示中を出題対象
+                </button>
+                <button id="disableVisible" class="text-button">
+                  表示中を対象外
+                </button>
+              </div>
+            </div>
+            <div class="filter-grid">
+              <label
+                >検索<input
+                  id="wordSearch"
+                  type="search"
+                  placeholder="英単語・日本語で検索"
+              /></label>
+              <label
+                >カテゴリ<select id="wordTopicFilter">
+                  <option value="all">すべて</option>
+                </select></label
+              >
+              <label
+                >出題設定<select id="wordEnabledFilter">
+                  <option value="all">すべて</option>
+                  <option value="enabled">出題する</option>
+                  <option value="disabled">出題しない</option>
+                </select></label
+              >
+              <label
+                >種類<select id="wordSourceFilter">
+                  <option value="all">すべて</option>
+                  <option value="preset">プリセット</option>
+                  <option value="custom">個別登録</option>
+                </select></label
+              >
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th aria-sort="none">
+                      <button class="sort-button" data-sort="enabled">
+                        出題<span
+                          class="sort-indicator"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
+                    </th>
+                    <th aria-sort="none">
+                      <button class="sort-button" data-sort="english">
+                        英単語<span
+                          class="sort-indicator"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
+                    </th>
+                    <th aria-sort="none">
+                      <button class="sort-button" data-sort="japanese">
+                        日本語<span
+                          class="sort-indicator"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
+                    </th>
+                    <th aria-sort="ascending">
+                      <button class="sort-button" data-sort="topic">
+                        カテゴリ<span class="sort-indicator" aria-hidden="true"
+                          >▲</span
+                        >
+                      </button>
+                    </th>
+                    <th aria-sort="none">
+                      <button class="sort-button" data-sort="source">
+                        種類<span
+                          class="sort-indicator"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
+                    </th>
+                    <th>音声</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="wordTableBody"></tbody>
+              </table>
+            </div>
+            <p id="wordCountLabel" class="table-caption"></p>
+          </div>
+        </section>
+
+        <section id="screen-history" class="screen">
+          <div class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Score History</p>
+                <h2>スコア履歴</h2>
+              </div>
+              <div class="inline-actions">
+                <button id="exportHistory" class="secondary">CSV出力</button>
+                <button id="deleteAllHistory" class="danger-outline">
+                  すべて削除
+                </button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日時</th>
+                    <th>出題数</th>
+                    <th>正解</th>
+                    <th>正答率</th>
+                    <th>読み</th>
+                    <th>書き</th>
+                    <th>リスニング</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+              </table>
+            </div>
+            <p id="historyEmpty" class="empty-message hidden">
+              履歴はまだありません。
+            </p>
+          </div>
+        </section>
+
+        <section id="screen-help" class="screen">
+          <div class="card prose">
+            <p class="eyebrow">Guide</p>
+            <h2>使い方</h2>
+            <h3>このアプリについて</h3>
+            <p>
+              小学生を中心とした英語学習の入門向けに、身近な基礎英単語を「読む・書く・聞く」の三方向から練習できるようにしています。
+            </p>
+            <h3>1. 単語を準備する</h3>
+            <p>
+              最初からプリセット単語が入っています。「単語一覧」で、単語ごとに出題するかどうかを変更できます。自分の単語も登録できます。
+            </p>
+            <h3>2. 練習内容を選ぶ</h3>
+            <p>
+              読み・書き・リスニング、書きの難易度、カテゴリ、出題数を選びます。選択した条件に合う単語からランダムに出題します。
+            </p>
+            <h3>3. 音声について</h3>
+            <p>
+              音声はブラウザ標準の Web Speech
+              API（音声合成）を使用します。練習設定のプルダウンには、その端末とブラウザが提供している英語音声が表示されます。アメリカ英語、イギリス英語などから任意の声を選び、確認してから利用できます。
+            </p>
+            <h3>4. 保存について</h3>
+            <p>
+              個別単語、出題設定、画面テーマ、スコア履歴は、このブラウザの
+              localStorage
+              に保存します。ブラウザデータを消去すると失われます。必要な情報はCSV出力してください。
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>
+          外部辞書API・外部音声APIは使用していません。選択できる英語音声と音声品質は端末・OS・ブラウザに依存します。
+        </p>
+      </footer>
+    </div>
+
+    <script src="app.js?v=007"></script>
+  </body>
+</html>
