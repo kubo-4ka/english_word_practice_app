@@ -46,6 +46,8 @@
   let quiz = null;
   let visibleWordIds = [];
   let lastSettings = null;
+  let practiceFlashTimer = null;
+  let voicePreviewInProgress = false;
   let wordSort = { key: "topic", direction: "asc" };
 
   function allWords() { return [...presetWords, ...customWords]; }
@@ -173,7 +175,8 @@
       return;
     }
 
-    status.textContent = `${englishLocaleLabel(voice.lang)}の「${voice.name}」を使用します。`;
+    const serviceLabel = voice.localService ? "端末内音声" : "オンライン音声";
+    status.textContent = `${serviceLabel}・${englishLocaleLabel(voice.lang)}の「${voice.name}」を使用します。`;
   }
 
   function populateVoiceSelect() {
@@ -209,12 +212,20 @@
 
     const groups = new Map();
     voices.forEach(voice => {
-      const label = englishLocaleLabel(voice.lang);
+      const serviceLabel = voice.localService ? "端末内" : "オンライン";
+      const localeLabel = englishLocaleLabel(voice.lang);
+      const label = `${serviceLabel}｜${localeLabel}`;
       if (!groups.has(label)) groups.set(label, []);
       groups.get(label).push(voice);
     });
 
-    groups.forEach((groupVoices, label) => {
+    const orderedGroups = [...groups.entries()].sort(([labelA], [labelB]) => {
+      const serviceOrderA = labelA.startsWith("端末内") ? 0 : 1;
+      const serviceOrderB = labelB.startsWith("端末内") ? 0 : 1;
+      return serviceOrderA - serviceOrderB || labelA.localeCompare(labelB, "ja");
+    });
+
+    orderedGroups.forEach(([label, groupVoices]) => {
       const optgroup = document.createElement("optgroup");
       optgroup.label = label;
 
@@ -238,7 +249,7 @@
     }
 
     select.disabled = false;
-    preview.disabled = false;
+    preview.disabled = voicePreviewInProgress;
     updateVoiceStatus(selectedVoice);
   }
 
@@ -269,11 +280,42 @@
     select.addEventListener("change", event => {
       selectedVoiceKey = event.target.value;
       localStorage.setItem(STORAGE.voice, selectedVoiceKey);
+      const status = $("#voiceStatus");
+      status.classList.remove("warning-text", "success-text");
       updateVoiceStatus(getSelectedVoice());
     });
 
-    preview.addEventListener("click", () => {
-      speak("Hello! Let's practice English words.");
+    preview.addEventListener("click", async () => {
+      if (voicePreviewInProgress) return;
+
+      const originalLabel = preview.textContent;
+      const status = $("#voiceStatus");
+
+      voicePreviewInProgress = true;
+      preview.disabled = true;
+      preview.textContent = "確認中...";
+      $("#startPractice").disabled = true;
+      status.classList.remove("warning-text", "success-text");
+      status.textContent = "選択した音声を短く再生して確認しています。";
+
+      const playback = await checkSelectedVoicePlayback();
+
+      voicePreviewInProgress = false;
+      preview.textContent = originalLabel;
+      preview.disabled = getEnglishVoices().length === 0;
+      updatePracticeAvailability();
+
+      if (playback.ok) {
+        const voice = playback.voice || getSelectedVoice();
+        const serviceLabel = voice && voice.localService ? "端末内音声" : "オンライン音声";
+        status.textContent = voice
+          ? `音声を確認できました。${serviceLabel}・${englishLocaleLabel(voice.lang)}の「${voice.name}」を使用します。`
+          : "音声を確認できました。";
+        status.classList.add("success-text");
+      } else {
+        status.textContent = `音声を確認できませんでした。${playback.reason}`;
+        status.classList.add("warning-text");
+      }
     });
 
     refreshVoices();
@@ -289,6 +331,75 @@
       window.setTimeout(refreshVoices, 250);
       window.setTimeout(refreshVoices, 1000);
     }
+  }
+
+  function checkSelectedVoicePlayback(timeoutMs = 5000) {
+    return new Promise(resolve => {
+      if (!("speechSynthesis" in window)) {
+        resolve({ ok: false, reason: "このブラウザは音声合成に対応していません。" });
+        return;
+      }
+
+      const selectedVoice = getSelectedVoice();
+      if (!selectedVoice) {
+        resolve({ ok: false, reason: "利用可能な英語音声を取得できませんでした。" });
+        return;
+      }
+
+      speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance("Ready");
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang || "en-US";
+      utterance.rate = 0.82;
+      utterance.pitch = 1;
+      utterance.volume = 0.72;
+
+      let settled = false;
+      let started = false;
+
+      const finish = result => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(result);
+      };
+
+      utterance.onstart = () => {
+        started = true;
+      };
+
+      utterance.onend = () => {
+        finish({ ok: true, voice: selectedVoice });
+      };
+
+      utterance.onerror = event => {
+        const errorName = event.error || "unknown";
+        finish({
+          ok: false,
+          reason: `選択した音声を再生できませんでした（${errorName}）。`
+        });
+      };
+
+      const timer = window.setTimeout(() => {
+        speechSynthesis.cancel();
+        finish({
+          ok: false,
+          reason: started
+            ? "音声再生が完了しませんでした。"
+            : "音声再生を開始できませんでした。通信状態や音声サービスをご確認ください。"
+        });
+      }, timeoutMs);
+
+      try {
+        speechSynthesis.speak(utterance);
+      } catch (error) {
+        finish({
+          ok: false,
+          reason: `音声再生処理でエラーが発生しました（${error.message || "unknown"}）。`
+        });
+      }
+    });
   }
 
   function speak(text) {
@@ -313,6 +424,59 @@
     utterance.pitch = 1;
     speechSynthesis.speak(utterance);
     return true;
+  }
+
+  function hidePracticeFlash() {
+    const flash = $("#practiceFlash");
+    if (!flash) return;
+
+    if (practiceFlashTimer) {
+      window.clearTimeout(practiceFlashTimer);
+      practiceFlashTimer = null;
+    }
+
+    flash.textContent = "";
+    flash.className = "flash-message hidden";
+  }
+
+  function showPracticeFlash(message, type = "warning", autoHide = true) {
+    const flash = $("#practiceFlash");
+    if (!flash) return;
+
+    if (practiceFlashTimer) {
+      window.clearTimeout(practiceFlashTimer);
+      practiceFlashTimer = null;
+    }
+
+    flash.textContent = message;
+    flash.className = `flash-message ${type}`;
+
+    if (autoHide) {
+      practiceFlashTimer = window.setTimeout(() => {
+        hidePracticeFlash();
+      }, 9000);
+    }
+  }
+
+  function focusPracticeSettings(message) {
+    $("#quizArea").classList.add("hidden");
+    $("#resultArea").classList.add("hidden");
+    $("#practiceSetup").classList.remove("hidden");
+    showScreen("practice");
+    showPracticeFlash(message, "warning", false);
+
+    window.requestAnimationFrame(() => {
+      const setup = $("#practiceSetup");
+      if (!setup) return;
+
+      setup.setAttribute("tabindex", "-1");
+      setup.scrollIntoView({ behavior: "smooth", block: "start" });
+      try {
+        setup.focus({ preventScroll: true });
+      } catch {
+        setup.focus();
+      }
+    });
   }
 
   function initNavigation() {
@@ -383,15 +547,16 @@
     $("#startRecommendedHome").addEventListener("click", () => {
       applyRecommendedSettings();
       showScreen("practice");
-      if (!$("#startPractice").disabled) startPractice();
+      if (!$("#startPractice").disabled) startPractice(null, { trigger: "recommended" });
     });
-    $("#startPractice").addEventListener("click", () => startPractice());
+    $("#startPractice").addEventListener("click", () => startPractice(null, { trigger: "settings" }));
     $("#nextQuestion").addEventListener("click", nextQuestion);
     $("#quitQuiz").addEventListener("click", () => {
       if (confirm("練習を中断しますか？現在の結果は保存されません。")) showSetup();
     });
-    $("#retryPractice").addEventListener("click", () => startPractice(lastSettings));
+    $("#retryPractice").addEventListener("click", () => startPractice(lastSettings, { trigger: "retry" }));
     $("#backToSetup").addEventListener("click", showSetup);
+    $("#resultReviewFilter").addEventListener("change", renderResultAnswers);
   }
 
   function getSettings() {
@@ -407,6 +572,7 @@
     return allWords().filter(w => isEnabled(w) && settings.sources.includes(w.source) && settings.topics.includes(w.topic));
   }
   function updatePracticeAvailability() {
+    $("#practiceAvailability").classList.remove("warning-text");
     const s=getSettings();
     const words=eligibleWords(s);
     const issues=[];
@@ -417,7 +583,7 @@
     if (words.length < 4) issues.push("条件に合う出題対象単語が4件以上必要です。");
     if (s.modes.includes("listening") && !("speechSynthesis" in window)) issues.push("このブラウザではリスニングを利用できません。");
     $("#practiceAvailability").textContent = issues.length ? issues[0] : `条件に合う単語：${words.length}件（繰り返し出題あり）`;
-    $("#startPractice").disabled = issues.length > 0;
+    $("#startPractice").disabled = issues.length > 0 || voicePreviewInProgress;
   }
 
   function buildQuestion(word, mode, settings, pool) {
@@ -455,21 +621,93 @@
       choices:shuffle([missing,...distractors]) };
   }
 
-  function startPractice(forcedSettings=null) {
+  async function startPractice(forcedSettings=null, options={}) {
+    hidePracticeFlash();
+
     // clickイベントなどが誤って渡されても、練習設定として扱わない。
-    const settings = forcedSettings && Array.isArray(forcedSettings.modes)
+    const originalSettings = forcedSettings && Array.isArray(forcedSettings.modes)
       ? forcedSettings
       : getSettings();
-    const pool = eligibleWords(settings);
-    if (pool.length<4) return;
-    lastSettings=JSON.parse(JSON.stringify(settings));
-    const questions=[];
-    for(let i=0;i<settings.count;i++) {
-      const mode=settings.modes[Math.floor(Math.random()*settings.modes.length)];
-      const word=pool[Math.floor(Math.random()*pool.length)];
-      questions.push(buildQuestion(word,mode,settings,pool));
+    const settings = JSON.parse(JSON.stringify(originalSettings));
+
+    const startButton = $("#startPractice");
+    const originalLabel = startButton.textContent;
+
+    if (settings.modes.includes("listening")) {
+      startButton.disabled = true;
+      startButton.textContent = "音声を確認中...";
+      $("#practiceAvailability").classList.remove("warning-text");
+      $("#practiceAvailability").textContent =
+        "選択した音声を短く再生して、リスニングを利用できるか確認しています。";
+
+      const playback = await checkSelectedVoicePlayback();
+
+      startButton.textContent = originalLabel;
+
+      if (!playback.ok) {
+        const listeningCheckbox = $('input[name="mode"][value="listening"]');
+        if (listeningCheckbox) listeningCheckbox.checked = false;
+        settings.modes = settings.modes.filter(mode => mode !== "listening");
+
+        updatePracticeAvailability();
+
+        if (!settings.modes.length) {
+          focusPracticeSettings(
+            `リスニングを利用できません。${playback.reason} ` +
+            "リスニングのみが選択されていたため練習を開始できません。読みまたは書きを選択して、もう一度「練習開始」を押してください。"
+          );
+          return;
+        }
+
+        const modeLabels = { reading: "読み", writing: "書き" };
+        const remainingModes = settings.modes
+          .map(mode => modeLabels[mode] || mode)
+          .join("・");
+        const continuationMessage = options.trigger === "recommended"
+          ? "リスニングを外し、読み・書きの問題で練習を開始します。"
+          : `リスニングを除去し、残った練習内容（${remainingModes}）で開始します。`;
+
+        showPracticeFlash(
+          `リスニングを利用できません。${playback.reason} ${continuationMessage}`,
+          "warning",
+          true
+        );
+      } else {
+        $("#practiceAvailability").classList.remove("warning-text");
+      }
     }
-    quiz={ settings, questions, index:0, correct:0, answered:false, detail:{reading:[0,0],writing:[0,0],listening:[0,0]} };
+
+    const pool = eligibleWords(settings);
+    if (pool.length < 4) {
+      startButton.textContent = originalLabel;
+      updatePracticeAvailability();
+      focusPracticeSettings(
+        "現在の設定では、条件に合う出題対象単語が4件未満です。出題元またはカテゴリを見直してください。"
+      );
+      return;
+    }
+
+    lastSettings = JSON.parse(JSON.stringify(settings));
+    const questions = [];
+
+    for (let i = 0; i < settings.count; i++) {
+      const mode = settings.modes[Math.floor(Math.random() * settings.modes.length)];
+      const word = pool[Math.floor(Math.random() * pool.length)];
+      questions.push(buildQuestion(word, mode, settings, pool));
+    }
+
+    quiz = {
+      settings,
+      questions,
+      index: 0,
+      correct: 0,
+      answered: false,
+      detail: { reading: [0,0], writing: [0,0], listening: [0,0] },
+      answers: []
+    };
+
+    startButton.textContent = originalLabel;
+    startButton.disabled = false;
     $("#practiceSetup").classList.add("hidden");
     $("#resultArea").classList.add("hidden");
     $("#quizArea").classList.remove("hidden");
@@ -514,6 +752,20 @@
     quiz.answered=true;
     const q=quiz.questions[quiz.index];
     const correct=String(choice).toLowerCase()===String(q.correct).toLowerCase();
+
+    quiz.answers.push({
+      number: quiz.index + 1,
+      mode: q.mode,
+      level: q.level || "",
+      prompt: q.prompt,
+      display: q.display || "",
+      wordEnglish: q.word.english,
+      wordJapanese: q.word.japanese,
+      selectedAnswer: String(choice),
+      correctAnswer: String(q.correct),
+      isCorrect: correct
+    });
+
     quiz.detail[q.mode][1]++;
     if(correct){ quiz.correct++; quiz.detail[q.mode][0]++; }
     $$(".answer-button").forEach(b=>{
@@ -531,6 +783,75 @@
   function nextQuestion() {
     if(quiz.index<quiz.questions.length-1){ quiz.index++; renderQuestion(); } else finishQuiz();
   }
+  function resultQuestionDescription(answer) {
+    if (answer.mode === "reading") {
+      return {
+        title: answer.prompt,
+        detail: `英単語の意味を選ぶ問題・${answer.wordEnglish}：${answer.wordJapanese}`
+      };
+    }
+
+    if (answer.mode === "listening") {
+      return {
+        title: `音声で聞いた単語：${answer.wordEnglish}`,
+        detail: `${answer.wordEnglish}：${answer.wordJapanese}`
+      };
+    }
+
+    if (answer.level === "word") {
+      return {
+        title: answer.prompt,
+        detail: `日本語に合う英単語を選ぶ問題・${answer.wordEnglish}：${answer.wordJapanese}`
+      };
+    }
+
+    return {
+      title: `${answer.display}（${answer.prompt}）`,
+      detail: `空欄に入る文字を選ぶ問題・完成形：${answer.wordEnglish}`
+    };
+  }
+
+  function renderResultAnswers() {
+    const list = $("#resultAnswerList");
+    const empty = $("#resultAnswerEmpty");
+    const filter = $("#resultReviewFilter").value;
+    if (!list || !empty || !quiz) return;
+
+    const modeLabels = { reading: "読み", writing: "書き", listening: "リスニング" };
+    const answers = (quiz.answers || []).filter(answer => {
+      if (filter === "wrong") return !answer.isCorrect;
+      if (filter === "correct") return answer.isCorrect;
+      return true;
+    });
+
+    list.innerHTML = answers.map(answer => {
+      const question = resultQuestionDescription(answer);
+      const stateClass = answer.isCorrect ? "correct" : "wrong";
+      const stateLabel = answer.isCorrect ? "正解" : "不正解";
+
+      return `<article class="result-answer-item ${stateClass}">
+        <div class="result-answer-number">
+          Q${answer.number}
+          <span class="result-status-mark ${stateClass}">${stateLabel}</span>
+        </div>
+        <div class="result-answer-question">
+          <strong>${escapeHtml(modeLabels[answer.mode] || answer.mode)}：${escapeHtml(question.title)}</strong>
+          <span>${escapeHtml(question.detail)}</span>
+        </div>
+        <div class="result-answer-value ${answer.isCorrect ? "" : "user-wrong"}">
+          <span class="label">あなたの解答</span>
+          <strong>${escapeHtml(answer.selectedAnswer)}</strong>
+        </div>
+        <div class="result-answer-value correct-answer">
+          <span class="label">正しい答え</span>
+          <strong>${escapeHtml(answer.correctAnswer)}</strong>
+        </div>
+      </article>`;
+    }).join("");
+
+    empty.classList.toggle("hidden", answers.length > 0);
+  }
+
   function finishQuiz() {
     const percent=Math.round(quiz.correct/quiz.questions.length*100);
     const record={
@@ -546,9 +867,12 @@
     $("#resultBreakdown").innerHTML=Object.entries(labels).map(([k,l])=>{
       const [c,t]=quiz.detail[k]; return `<div><strong>${l}</strong><br>${t?`${c} / ${t}`:"出題なし"}</div>`;
     }).join("");
+    $("#resultReviewFilter").value = "all";
+    renderResultAnswers();
     renderHome();
   }
   function showSetup() {
+    hidePracticeFlash();
     if("speechSynthesis" in window) speechSynthesis.cancel();
     $("#quizArea").classList.add("hidden");
     $("#resultArea").classList.add("hidden");
