@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>英単語 よみ・かき・リスニング</title>
-  <link rel="stylesheet" href="style.css?v=010">
+  <link rel="stylesheet" href="style.css?v=011?v=010">
 </head>
 <body>
   <header class="app-header">
@@ -40,7 +40,7 @@
         <div>
           <span class="pill">小学生向け・基礎英単語</span>
           <h2>今日の英単語練習を始めましょう</h2>
-          <p>英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と自分で登録した単語から、10〜100問に挑戦できます。</p>
+          <p>小学生を中心に、英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と自分で登録した単語から、10〜100問に挑戦できます。</p>
           <div class="hero-actions">
             <button id="startRecommendedHome" class="primary">おすすめ設定で始める</button>
             <button class="secondary" data-go="practice">練習設定へ</button>
@@ -148,6 +148,11 @@
         <div class="result-score"><strong id="resultPercent">0%</strong><span id="resultCount">0 / 0 問正解</span></div>
         <div id="resultBreakdown" class="result-grid"></div>
 
+        <div class="inline-actions center result-actions">
+          <button id="retryPractice" class="primary">同じ設定でもう一度</button>
+          <button id="backToSetup" class="secondary">設定へ戻る</button>
+        </div>
+
         <section class="result-review" aria-labelledby="resultReviewTitle">
           <div class="result-review-heading">
             <div>
@@ -166,11 +171,6 @@
           <div id="resultAnswerList" class="result-answer-list"></div>
           <p id="resultAnswerEmpty" class="empty-message hidden">条件に合う問題はありません。</p>
         </section>
-
-        <div class="inline-actions center result-actions">
-          <button id="retryPractice" class="primary">同じ設定でもう一度</button>
-          <button id="backToSetup" class="secondary">設定へ戻る</button>
-        </div>
       </div>
     </section>
 
@@ -256,7 +256,7 @@
         <h3>2. 練習内容を選ぶ</h3>
         <p>読み・書き・リスニング、書きの難易度、カテゴリ、出題数を選びます。選択した条件に合う単語からランダムに出題します。</p>
         <h3>3. 音声について</h3>
-        <p>音声はブラウザ標準の Web Speech API（音声合成）を使用します。プルダウンには、ブラウザが提供する情報を基に端末内音声とオンライン音声を分けて表示します。リスニングを含む問題を開始すると、選択音声を短く再生して利用可否を確認します。あくまでブラウザ標準機能でできることの確認であり、英語学習としての正しさを保証するものではありません。</p>
+        <p>音声はブラウザ標準の Web Speech API（音声合成）を使用します。プルダウンには、ブラウザが提供する情報を基に端末内音声とオンライン音声を分けて表示します。リスニングを含む問題を開始すると、選択音声を短く再生して利用可否を確認します。</p>
         <h3>4. 保存について</h3>
         <p>個別単語、出題設定、画面テーマ、スコア履歴は、このブラウザの localStorage に保存します。ブラウザデータを消去すると失われます。必要な情報はCSV出力してください。</p>
       </div>

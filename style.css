@@ -679,7 +679,7 @@ html[data-theme="5"] .primary {
   background: color-mix(in srgb, var(--danger) 11%, var(--surface));
 }
 .result-actions {
-  margin-top: 24px;
+  margin: 24px 0 6px;
 }
 .register-grid {
   display: grid;
