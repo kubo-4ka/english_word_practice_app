@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>英単語 よみ・かき・リスニング</title>
-    <link rel="stylesheet" href="style.css?v=012?v=010" />
+    <link rel="stylesheet" href="style.css?v=013" />
   </head>
   <body>
     <header class="app-header">
@@ -32,6 +32,7 @@
       <button class="tab active" data-screen="home">ホーム</button>
       <button class="tab" data-screen="practice">練習</button>
       <button class="tab" data-screen="words">単語一覧</button>
+      <button class="tab" data-screen="badges">バッジ</button>
       <button class="tab" data-screen="history">履歴</button>
       <button class="tab" data-screen="help">使い方</button>
     </nav>
@@ -179,6 +180,27 @@
                 >
               </fieldset>
 
+              <fieldset class="study-mode-fieldset">
+                <legend>出題モード</legend>
+                <label>
+                  <input type="radio" name="studyMode" value="normal" checked />
+                  通常
+                </label>
+                <label>
+                  <input type="radio" name="studyMode" value="review" />
+                  復習対象
+                  <span id="reviewModeCount" class="count-chip">0</span>
+                </label>
+                <label>
+                  <input type="radio" name="studyMode" value="untried" />
+                  まだやっていない単語
+                  <span id="untriedModeCount" class="count-chip">0</span>
+                </label>
+                <p class="note">
+                  間違えた単語は復習対象になります。復習対象は2回連続正解で解除します。
+                </p>
+              </fieldset>
+
               <div class="field-group">
                 <label for="questionCount">出題数</label>
                 <select id="questionCount">
@@ -237,6 +259,11 @@
             <div class="quiz-top">
               <div>
                 <span id="quizModeBadge" class="pill">読み</span>
+                <span
+                  id="quizStudyModeBadge"
+                  class="pill study-mode-pill hidden"
+                  >復習</span
+                >
                 <span id="quizProgress">1 / 10</span>
               </div>
               <div class="score-mini">
@@ -261,6 +288,13 @@
               ><span id="resultCount">0 / 0 問正解</span>
             </div>
             <div id="resultBreakdown" class="result-grid"></div>
+
+            <div
+              id="achievementUnlockNotice"
+              class="achievement-unlock-notice hidden"
+              role="status"
+              aria-live="polite"
+            ></div>
 
             <div class="inline-actions center result-actions">
               <button id="retryPractice" class="primary">
@@ -379,6 +413,15 @@
                   <option value="custom">個別登録</option>
                 </select></label
               >
+              <label
+                >学習状態
+                <select id="wordLearningFilter">
+                  <option value="all">すべて</option>
+                  <option value="review">復習対象</option>
+                  <option value="untried">未挑戦</option>
+                  <option value="attempted">挑戦済み</option>
+                </select>
+              </label>
             </div>
             <div class="table-wrap">
               <table>
@@ -392,6 +435,7 @@
                         ></span>
                       </button>
                     </th>
+                    <th>学習状態</th>
                     <th aria-sort="none">
                       <button class="sort-button" data-sort="english">
                         英単語<span
@@ -431,6 +475,33 @@
               </table>
             </div>
             <p id="wordCountLabel" class="table-caption"></p>
+          </div>
+        </section>
+
+        <section id="screen-badges" class="screen">
+          <div class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Achievements</p>
+                <h2>バッジ・実績</h2>
+              </div>
+            </div>
+            <p class="note">
+              練習を続けるとバッジを獲得できます。スコア履歴を削除しても、獲得済みバッジと学習進捗は残ります。
+            </p>
+            <div id="achievementSummary" class="achievement-summary-grid"></div>
+          </div>
+
+          <div id="achievementSeries" class="achievement-series-list"></div>
+
+          <div class="card secret-achievement-card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Secret Badge</p>
+                <h2>シークレットバッジ</h2>
+              </div>
+            </div>
+            <div id="secretAchievement"></div>
           </div>
         </section>
 
@@ -492,11 +563,19 @@
               音声はブラウザ標準の Web Speech
               API（音声合成）を使用します。プルダウンには、ブラウザが提供する情報を基に端末内音声とオンライン音声を分けて表示します。リスニングを含む問題を開始すると、選択音声を短く再生して利用可否を確認します。あくまでブラウザ標準機能でできることの確認であり、英語学習としての正しさを保証するものではありません。
             </p>
-            <h3>4. 保存について</h3>
+            <h3>4. 復習・未挑戦モード</h3>
             <p>
-              個別単語、出題設定、画面テーマ、スコア履歴は、このブラウザの
+              間違えた単語は自動で復習対象になります。その後、その単語に2回連続で正解すると復習対象から外れます。「まだやっていない単語」では、一度も出題されたことがない単語を優先して練習します。残り件数が選択した出題数より少ない場合は、未挑戦の残り件数だけ出題します。
+            </p>
+            <h3>5. バッジ・実績</h3>
+            <p>
+              練習完了回数、100%正解回数、読み・書き・リスニングの累計正解数でバッジを獲得できます。バッジ画面では、現在値、次の目標、獲得済みバッジを確認できます。
+            </p>
+            <h3>6. 保存について</h3>
+            <p>
+              個別単語、出題設定、画面テーマ、スコア履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの
               localStorage
-              に保存します。ブラウザデータを消去すると失われます。必要な情報はCSV出力してください。
+              に保存します。ブラウザデータを消去すると失われます。スコア履歴を削除しても学習進捗とバッジ実績は削除されません。
             </p>
           </div>
         </section>
@@ -509,6 +588,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=012"></script>
+    <script src="app.js?v=013"></script>
   </body>
 </html>

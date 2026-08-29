@@ -6,7 +6,10 @@
     disabled: "ewp_disabled_words_v1",
     history: "ewp_score_history_v1",
     theme: "ewp_theme_v1",
-    voice: "ewp_voice_v1"
+    voice: "ewp_voice_v1",
+    wordProgress: "ewp_word_progress_v1",
+    learningStats: "ewp_learning_stats_v1",
+    achievements: "ewp_achievements_v1"
   };
 
   const topics = {
@@ -37,6 +40,36 @@
     positionOrder: "位置・順序",
     other: "その他"
   };
+
+  const BADGE_THRESHOLDS = [5,10,20,40,60,80,100,200,300,400,500];
+
+  const BADGE_TIERS = [
+    { material:"bronze", size:"small", label:"ブロンズ・小" },
+    { material:"bronze", size:"medium", label:"ブロンズ・中" },
+    { material:"bronze", size:"large", label:"ブロンズ・大" },
+    { material:"silver", size:"small", label:"シルバー・小" },
+    { material:"silver", size:"medium", label:"シルバー・中" },
+    { material:"silver", size:"large", label:"シルバー・大" },
+    { material:"gold", size:"small", label:"ゴールド・小" },
+    { material:"gold", size:"medium", label:"ゴールド・中" },
+    { material:"gold", size:"large", label:"ゴールド・大" },
+    { material:"platinum", size:"large", label:"プラチナ" },
+    { material:"rainbow", size:"large", label:"レインボー" }
+  ];
+
+  const BADGE_MESSAGES = [
+    ["はじめの一歩！この調子で続けよう！","Great start! Keep going!"],
+    ["いいペース！少しずつ力になっているよ！","Nice pace! Keep it up!"],
+    ["継続できているね！","Great work! Stay with it!"],
+    ["もう慣れてきたね！","You're getting good!"],
+    ["かなり力がついてきた！","You're getting stronger!"],
+    ["もうすぐ大台！","Almost there!"],
+    ["100達成！すごい！","Amazing! You reached 100!"],
+    ["すごい継続力！","Great dedication!"],
+    ["かなりの達人だね！","You're becoming an expert!"],
+    ["マスター目前！","Almost a master!"],
+    ["もうマスターだね！","You're a word master!"]
+  ];
 
   const presetWords = [
     ["red","赤","colors"],["blue","青","colors"],["yellow","黄色","colors"],["green","緑","colors"],["white","白","colors"],["black","黒","colors"],["pink","桃色","colors"],["orange","オレンジ色","colors"],
@@ -615,6 +648,9 @@
   let customWords = load(STORAGE.custom, []);
   let disabledIds = new Set(load(STORAGE.disabled, []));
   let history = load(STORAGE.history, []);
+  let wordProgress = load(STORAGE.wordProgress, {});
+  let learningStats = load(STORAGE.learningStats, null);
+  let achievements = load(STORAGE.achievements, {});
   let quiz = null;
   let visibleWordIds = [];
   let lastSettings = null;
@@ -623,6 +659,380 @@
   let wordSort = { key: "topic", direction: "asc" };
 
   function allWords() { return [...presetWords, ...customWords]; }
+
+  function defaultWordProgress() {
+    return {
+      attempts: 0,
+      correct: 0,
+      wrong: 0,
+      review: false,
+      reviewCorrectStreak: 0,
+      firstAttemptedAt: "",
+      lastAttemptedAt: ""
+    };
+  }
+
+  function getWordProgress(id) {
+    const saved = wordProgress[id];
+    return saved ? { ...defaultWordProgress(), ...saved } : defaultWordProgress();
+  }
+
+  function saveWordProgress(id, progress) {
+    wordProgress[id] = progress;
+    save(STORAGE.wordProgress, wordProgress);
+  }
+
+  function updateWordProgress(id, isCorrect) {
+    const now = new Date().toISOString();
+    const progress = getWordProgress(id);
+    const wasReview = progress.review;
+
+    progress.attempts += 1;
+    if (!progress.firstAttemptedAt) progress.firstAttemptedAt = now;
+    progress.lastAttemptedAt = now;
+
+    let reviewAdded = false;
+    let reviewCleared = false;
+
+    if (isCorrect) {
+      progress.correct += 1;
+      if (progress.review) {
+        progress.reviewCorrectStreak += 1;
+        if (progress.reviewCorrectStreak >= 2) {
+          progress.review = false;
+          progress.reviewCorrectStreak = 0;
+          reviewCleared = true;
+        }
+      } else {
+        progress.reviewCorrectStreak = 0;
+      }
+    } else {
+      progress.wrong += 1;
+      progress.review = true;
+      progress.reviewCorrectStreak = 0;
+      reviewAdded = !wasReview;
+    }
+
+    saveWordProgress(id, progress);
+
+    return {
+      progress,
+      reviewAdded,
+      reviewCleared,
+      reviewPending: progress.review && isCorrect
+    };
+  }
+
+  function isReviewTarget(word) {
+    return getWordProgress(word.id).review;
+  }
+
+  function isUntriedWord(word) {
+    return getWordProgress(word.id).attempts === 0;
+  }
+
+  function wordLearningStatus(word) {
+    const progress = getWordProgress(word.id);
+
+    if (progress.review) {
+      return {
+        type: "review",
+        label: progress.reviewCorrectStreak
+          ? `復習 ${progress.reviewCorrectStreak}/2`
+          : "復習対象"
+      };
+    }
+
+    if (progress.attempts === 0) {
+      return { type: "untried", label: "未挑戦" };
+    }
+
+    return { type: "attempted", label: `挑戦済 ${progress.attempts}回` };
+  }
+
+  function defaultLearningStats() {
+    return {
+      completedSessions: 0,
+      perfectSessions: 0,
+      correct: {
+        reading: 0,
+        writing: 0,
+        listening: 0
+      },
+      migratedFromHistory: false
+    };
+  }
+
+  function initializeLearningData() {
+    if (!wordProgress || typeof wordProgress !== "object" || Array.isArray(wordProgress)) {
+      wordProgress = {};
+      save(STORAGE.wordProgress, wordProgress);
+    }
+
+    if (!achievements || typeof achievements !== "object" || Array.isArray(achievements)) {
+      achievements = {};
+      save(STORAGE.achievements, achievements);
+    }
+
+    const defaults = defaultLearningStats();
+    learningStats = {
+      ...defaults,
+      ...(learningStats || {}),
+      correct: {
+        ...defaults.correct,
+        ...((learningStats && learningStats.correct) || {})
+      }
+    };
+
+    if (!learningStats.migratedFromHistory) {
+      learningStats.completedSessions = history.length;
+      learningStats.perfectSessions = history.filter(item => Number(item.percent) === 100).length;
+
+      for (const item of history) {
+        const detail = item.detail || {};
+        for (const mode of ["reading","writing","listening"]) {
+          learningStats.correct[mode] += Number(detail[mode]?.[0] || 0);
+        }
+      }
+
+      learningStats.migratedFromHistory = true;
+      save(STORAGE.learningStats, learningStats);
+    }
+
+    evaluateAchievements(false);
+  }
+
+  function achievementSeriesDefinitions() {
+    return [
+      {
+        key: "sessions",
+        title: "チャレンジ回数",
+        short: "チャレンジ",
+        value: () => Number(learningStats.completedSessions || 0),
+        condition: threshold => `練習を${threshold}回、最後まで完了する`
+      },
+      {
+        key: "perfect",
+        title: "100%正解回数",
+        short: "パーフェクト",
+        value: () => Number(learningStats.perfectSessions || 0),
+        condition: threshold => `100%正解を${threshold}回達成する`
+      },
+      {
+        key: "reading",
+        title: "読み・累計正解",
+        short: "読み名人",
+        value: () => Number(learningStats.correct.reading || 0),
+        condition: threshold => `読み問題で累計${threshold}問正解する`
+      },
+      {
+        key: "writing",
+        title: "書き・累計正解",
+        short: "書き名人",
+        value: () => Number(learningStats.correct.writing || 0),
+        condition: threshold => `書き問題で累計${threshold}問正解する`
+      },
+      {
+        key: "listening",
+        title: "リスニング・累計正解",
+        short: "リスニング名人",
+        value: () => Number(learningStats.correct.listening || 0),
+        condition: threshold => `リスニング問題で累計${threshold}問正解する`
+      }
+    ];
+  }
+
+  function secretAchievementProgress() {
+    const words = allWords();
+    const attempted = words.filter(word => !isUntriedWord(word)).length;
+    const review = words.filter(isReviewTarget).length;
+
+    return {
+      total: words.length,
+      attempted,
+      review,
+      complete: words.length > 0 && attempted === words.length && review === 0
+    };
+  }
+
+  function evaluateAchievements(announce = true) {
+    const newlyUnlocked = [];
+    const now = new Date().toISOString();
+
+    for (const series of achievementSeriesDefinitions()) {
+      const value = series.value();
+
+      BADGE_THRESHOLDS.forEach((threshold, index) => {
+        const id = `${series.key}_${threshold}`;
+
+        if (value >= threshold && !achievements[id]) {
+          achievements[id] = now;
+          newlyUnlocked.push({
+            id,
+            title: `${series.short} ${threshold}`,
+            tier: BADGE_TIERS[index],
+            secret: false
+          });
+        }
+      });
+    }
+
+    const secret = secretAchievementProgress();
+    if (secret.complete && !achievements.secret_all_clear) {
+      achievements.secret_all_clear = now;
+      newlyUnlocked.push({
+        id: "secret_all_clear",
+        title: "オールクリア",
+        tier: { material:"rainbow", size:"large", label:"シークレット" },
+        secret: true
+      });
+    }
+
+    if (newlyUnlocked.length) {
+      save(STORAGE.achievements, achievements);
+    }
+
+    return announce ? newlyUnlocked : [];
+  }
+
+  function updateLearningStatsFromQuiz(percent) {
+    learningStats.completedSessions += 1;
+    if (percent === 100) learningStats.perfectSessions += 1;
+
+    for (const mode of ["reading","writing","listening"]) {
+      learningStats.correct[mode] += Number(quiz.detail[mode]?.[0] || 0);
+    }
+
+    save(STORAGE.learningStats, learningStats);
+  }
+
+  function badgeVisual(tier, locked = false) {
+    const classes = [
+      "badge-medal",
+      `badge-${tier.material}`,
+      `badge-size-${tier.size}`,
+      locked ? "locked" : ""
+    ].filter(Boolean).join(" ");
+
+    return `<span class="${classes}" aria-hidden="true"></span>`;
+  }
+
+  function renderBadges() {
+    const summary = $("#achievementSummary");
+    const seriesArea = $("#achievementSeries");
+    const secretArea = $("#secretAchievement");
+    if (!summary || !seriesArea || !secretArea) return;
+
+    const words = allWords();
+    const attempted = words.filter(word => !isUntriedWord(word)).length;
+    const review = words.filter(isReviewTarget).length;
+    const validAchievementIds = new Set();
+
+    for (const series of achievementSeriesDefinitions()) {
+      BADGE_THRESHOLDS.forEach(threshold => {
+        validAchievementIds.add(`${series.key}_${threshold}`);
+      });
+    }
+    validAchievementIds.add("secret_all_clear");
+
+    const unlockedCount = Object.keys(achievements)
+      .filter(id => validAchievementIds.has(id))
+      .length;
+
+    summary.innerHTML = [
+      [learningStats.completedSessions, "練習完了回数"],
+      [learningStats.perfectSessions, "100%正解回数"],
+      [learningStats.correct.reading, "読み・累計正解"],
+      [learningStats.correct.writing, "書き・累計正解"],
+      [learningStats.correct.listening, "リスニング・累計正解"],
+      [`${attempted}/${words.length}`, "挑戦済み単語"],
+      [review, "復習対象単語"],
+      [`${unlockedCount}/56`, "獲得バッジ"]
+    ].map(([value, label]) => `
+      <div class="achievement-summary-item">
+        <strong>${escapeHtml(value)}</strong>
+        <span>${escapeHtml(label)}</span>
+      </div>
+    `).join("");
+
+    seriesArea.innerHTML = achievementSeriesDefinitions().map((series, seriesIndex) => {
+      const current = series.value();
+      const unlockedInSeries = BADGE_THRESHOLDS.filter(threshold =>
+        Boolean(achievements[`${series.key}_${threshold}`])
+      ).length;
+      const nextThreshold = BADGE_THRESHOLDS.find(threshold => current < threshold);
+
+      const badges = BADGE_THRESHOLDS.map((threshold, index) => {
+        const id = `${series.key}_${threshold}`;
+        const unlockedAt = achievements[id];
+        const tier = BADGE_TIERS[index];
+        const [messageJa, messageEn] = BADGE_MESSAGES[index];
+        const progressText = unlockedAt
+          ? `獲得：${formatDate(unlockedAt)}`
+          : `${Math.min(current, threshold)} / ${threshold}`;
+
+        return `
+          <div class="badge-item ${unlockedAt ? "" : "locked"}">
+            ${badgeVisual(tier, !unlockedAt)}
+            <div class="badge-info">
+              <strong>${escapeHtml(series.short)} ${threshold}</strong>
+              <span class="badge-condition">${escapeHtml(series.condition(threshold))}</span>
+              <span class="badge-message-ja">${escapeHtml(messageJa)}</span>
+              <span class="badge-message-en">${escapeHtml(messageEn)}</span>
+              <span class="badge-progress">${escapeHtml(tier.label)}・${escapeHtml(progressText)}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <details class="achievement-series-card" ${seriesIndex === 0 ? "open" : ""}>
+          <summary>
+            <div class="achievement-series-title">
+              <strong>${escapeHtml(series.title)}</strong>
+              <span>現在 ${current} ／ 11段階中 ${unlockedInSeries}個獲得</span>
+            </div>
+          </summary>
+          <div class="achievement-series-body">
+            <p class="achievement-progress-line">
+              ${nextThreshold
+                ? `次の目標：${nextThreshold}（あと${nextThreshold - current}）`
+                : "11段階すべて達成！"}
+            </p>
+            <div class="badge-grid">${badges}</div>
+          </div>
+        </details>
+      `;
+    }).join("");
+
+    const secret = secretAchievementProgress();
+    const secretUnlocked = achievements.secret_all_clear;
+
+    secretArea.innerHTML = `
+      <div class="secret-badge-layout">
+        ${badgeVisual(
+          { material:"rainbow", size:"large", label:"シークレット" },
+          !secretUnlocked
+        )}
+        <div>
+          <h3>${secretUnlocked ? "オールクリア獲得！" : "？？？ オールクリア"}</h3>
+          <p class="secret-condition">
+            現在登録されている全単語に1回以上挑戦し、復習対象を0件にすると解禁します。
+          </p>
+          <strong>${secretUnlocked ? "全部に出会って、苦手もゼロ！すごい！" : "全単語との出会いと、苦手ゼロを目指そう！"}</strong>
+          <span class="badge-message-en">
+            ${secretUnlocked ? "You cleared every word!" : "Meet every word and clear your review list!"}
+          </span>
+          <div class="secret-progress-grid">
+            <span>挑戦済み ${secret.attempted} / ${secret.total}</span>
+            <span>復習対象 ${secret.review}件</span>
+            ${secretUnlocked ? `<span>獲得：${escapeHtml(formatDate(secretUnlocked))}</span>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function isEnabled(word) { return !disabledIds.has(word.id); }
   function setEnabled(id, enabled) {
     enabled ? disabledIds.delete(id) : disabledIds.add(id);
@@ -1062,6 +1472,7 @@
     if (scroller) scroller.scrollTo({top:0, behavior:"smooth"});
     else window.scrollTo({top:0, behavior:"smooth"});
     if (name === "words") renderWords();
+    if (name === "badges") renderBadges();
     if (name === "history") renderHistory();
     if (name === "home") renderHome();
     if (name === "practice") updatePracticeAvailability();
@@ -1106,12 +1517,14 @@
     $$('input[name="writingLevel"]').forEach(input => input.checked = true);
     $$('input[name="source"]').forEach(input => input.checked = true);
     $$('input[name="topic"]').forEach(input => input.checked = true);
+    const normalMode = $('input[name="studyMode"][value="normal"]');
+    if (normalMode) normalMode.checked = true;
     $("#questionCount").value = "20";
     updatePracticeAvailability();
   }
 
   function initPracticeSettings() {
-    $$('input[name="mode"],input[name="writingLevel"],input[name="source"]').forEach(x => x.addEventListener("change", updatePracticeAvailability));
+    $$('input[name="mode"],input[name="writingLevel"],input[name="source"],input[name="studyMode"]').forEach(x => x.addEventListener("change", updatePracticeAvailability));
     $("#questionCount").addEventListener("change", updatePracticeAvailability);
     $("#checkAllTopics").addEventListener("click", () => { $$('input[name="topic"]').forEach(x=>x.checked=true); updatePracticeAvailability(); });
     $("#uncheckAllTopics").addEventListener("click", () => { $$('input[name="topic"]').forEach(x=>x.checked=false); updatePracticeAvailability(); });
@@ -1137,24 +1550,111 @@
       writingLevels: $$('input[name="writingLevel"]:checked').map(x=>x.value),
       sources: $$('input[name="source"]:checked').map(x=>x.value),
       topics: $$('input[name="topic"]:checked').map(x=>x.value),
+      studyMode: $('input[name="studyMode"]:checked')?.value || "normal",
       count: Number($("#questionCount").value)
     };
   }
+
   function eligibleWords(settings) {
-    return allWords().filter(w => isEnabled(w) && settings.sources.includes(w.source) && settings.topics.includes(w.topic));
+    return allWords().filter(word =>
+      isEnabled(word)
+      && settings.sources.includes(word.source)
+      && settings.topics.includes(word.topic)
+    );
   }
+
+  function targetWords(settings, basePool = eligibleWords(settings)) {
+    if (settings.studyMode === "review") {
+      return basePool.filter(isReviewTarget);
+    }
+
+    if (settings.studyMode === "untried") {
+      return basePool.filter(isUntriedWord);
+    }
+
+    return basePool;
+  }
+
+  function buildWordSequence(targetPool, count, allowRepeat = true) {
+    if (!targetPool.length || count <= 0) return [];
+
+    if (!allowRepeat) {
+      return shuffle(targetPool).slice(0, count);
+    }
+
+    const result = [];
+    let previousId = "";
+
+    while (result.length < count) {
+      let deck = shuffle(targetPool);
+
+      if (
+        deck.length > 1
+        && previousId
+        && deck[0].id === previousId
+      ) {
+        const swapIndex = deck.findIndex(word => word.id !== previousId);
+        if (swapIndex > 0) {
+          [deck[0], deck[swapIndex]] = [deck[swapIndex], deck[0]];
+        }
+      }
+
+      for (const word of deck) {
+        if (result.length >= count) break;
+        result.push(word);
+        previousId = word.id;
+      }
+    }
+
+    return result;
+  }
+
   function updatePracticeAvailability() {
     $("#practiceAvailability").classList.remove("warning-text");
-    const s=getSettings();
-    const words=eligibleWords(s);
-    const issues=[];
-    if (!s.modes.length) issues.push("練習内容を選択してください。");
-    if (s.modes.includes("writing") && !s.writingLevels.length) issues.push("書きの段階を選択してください。");
-    if (!s.sources.length) issues.push("出題元を選択してください。");
-    if (!s.topics.length) issues.push("カテゴリを選択してください。");
-    if (words.length < 4) issues.push("条件に合う出題対象単語が4件以上必要です。");
-    if (s.modes.includes("listening") && !("speechSynthesis" in window)) issues.push("このブラウザではリスニングを利用できません。");
-    $("#practiceAvailability").textContent = issues.length ? issues[0] : `条件に合う単語：${words.length}件（繰り返し出題あり）`;
+    const settings = getSettings();
+    const basePool = eligibleWords(settings);
+    const reviewPool = basePool.filter(isReviewTarget);
+    const untriedPool = basePool.filter(isUntriedWord);
+    const targets = targetWords(settings, basePool);
+    const issues = [];
+
+    const reviewCount = $("#reviewModeCount");
+    const untriedCount = $("#untriedModeCount");
+    if (reviewCount) reviewCount.textContent = reviewPool.length;
+    if (untriedCount) untriedCount.textContent = untriedPool.length;
+
+    if (!settings.modes.length) issues.push("練習内容を選択してください。");
+    if (settings.modes.includes("writing") && !settings.writingLevels.length) {
+      issues.push("書きの段階を選択してください。");
+    }
+    if (!settings.sources.length) issues.push("出題元を選択してください。");
+    if (!settings.topics.length) issues.push("カテゴリを選択してください。");
+    if (basePool.length < 4) {
+      issues.push("条件に合う出題対象単語が4件以上必要です。");
+    }
+    if (settings.studyMode === "review" && !targets.length) {
+      issues.push("現在の条件に復習対象の単語はありません。");
+    }
+    if (settings.studyMode === "untried" && !targets.length) {
+      issues.push("現在の条件に未挑戦の単語はありません。");
+    }
+    if (settings.modes.includes("listening") && !("speechSynthesis" in window)) {
+      issues.push("このブラウザではリスニングを利用できません。");
+    }
+
+    let status = "";
+    if (settings.studyMode === "review") {
+      status = `復習対象：${targets.length}件／選択条件の単語：${basePool.length}件`;
+    } else if (settings.studyMode === "untried") {
+      status = `未挑戦：${targets.length}件／選択条件の単語：${basePool.length}件`;
+      if (targets.length > 0 && targets.length < settings.count) {
+        status += `（今回は${targets.length}問）`;
+      }
+    } else {
+      status = `条件に合う単語：${basePool.length}件（全単語を一巡するまで重複を抑制）`;
+    }
+
+    $("#practiceAvailability").textContent = issues.length ? issues[0] : status;
     $("#startPractice").disabled = issues.length > 0 || voicePreviewInProgress;
   }
 
@@ -1250,6 +1750,8 @@
     }
 
     const pool = eligibleWords(settings);
+    const targets = targetWords(settings, pool);
+
     if (pool.length < 4) {
       startButton.textContent = originalLabel;
       updatePracticeAvailability();
@@ -1259,12 +1761,32 @@
       return;
     }
 
+    if (!targets.length) {
+      startButton.textContent = originalLabel;
+      updatePracticeAvailability();
+      focusPracticeSettings(
+        settings.studyMode === "review"
+          ? "現在の条件に復習対象の単語はありません。通常または未挑戦モードを選択してください。"
+          : "現在の条件に未挑戦の単語はありません。通常または復習モードを選択してください。"
+      );
+      return;
+    }
+
+    const actualCount = settings.studyMode === "untried"
+      ? Math.min(settings.count, targets.length)
+      : settings.count;
+
     lastSettings = JSON.parse(JSON.stringify(settings));
     const questions = [];
+    const wordSequence = buildWordSequence(
+      targets,
+      actualCount,
+      settings.studyMode !== "untried"
+    );
 
-    for (let i = 0; i < settings.count; i++) {
+    for (let i = 0; i < wordSequence.length; i++) {
       const mode = settings.modes[Math.floor(Math.random() * settings.modes.length)];
-      const word = pool[Math.floor(Math.random() * pool.length)];
+      const word = wordSequence[i];
       questions.push(buildQuestion(word, mode, settings, pool));
     }
 
@@ -1290,7 +1812,12 @@
     const q=quiz.questions[quiz.index];
     quiz.answered=false;
     const labels={reading:"読み",writing:"書き",listening:"リスニング"};
+    const studyLabels={normal:"",review:"復習モード",untried:"未挑戦モード"};
     $("#quizModeBadge").textContent=labels[q.mode];
+    const studyBadge=$("#quizStudyModeBadge");
+    const studyLabel=studyLabels[quiz.settings.studyMode]||"";
+    studyBadge.textContent=studyLabel;
+    studyBadge.classList.toggle("hidden",!studyLabel);
     $("#quizProgress").textContent=`${quiz.index+1} / ${quiz.questions.length}`;
     $("#quizCorrect").textContent=quiz.correct;
     $("#progressBar").style.width=`${(quiz.index/quiz.questions.length)*100}%`;
@@ -1340,13 +1867,31 @@
 
     quiz.detail[q.mode][1]++;
     if(correct){ quiz.correct++; quiz.detail[q.mode][0]++; }
+
+    const progressUpdate = updateWordProgress(q.word.id, correct);
+
     $$(".answer-button").forEach(b=>{
       b.disabled=true;
       if(b.textContent.toLowerCase()===String(q.correct).toLowerCase()) b.classList.add("correct");
     });
     if(!correct) button.classList.add("wrong");
     $("#quizCorrect").textContent=quiz.correct;
-    $("#feedback").textContent=correct ? "正解です！" : `正解：${q.correct}（${q.word.english}：${q.word.japanese}）`;
+
+    let feedbackText = "";
+    if (!correct) {
+      feedbackText = `正解：${q.correct}（${q.word.english}：${q.word.japanese}）`;
+      feedbackText += progressUpdate.reviewAdded
+        ? "　復習対象に追加しました。"
+        : "　復習対象のままです。";
+    } else if (progressUpdate.reviewCleared) {
+      feedbackText = "正解です！ 2回連続正解で復習完了。復習対象から外れました。";
+    } else if (progressUpdate.reviewPending) {
+      feedbackText = "正解です！ あと1回連続正解で復習対象から外れます。";
+    } else {
+      feedbackText = "正解です！";
+    }
+
+    $("#feedback").textContent=feedbackText;
     $("#feedback").className=`feedback ${correct?"good":"bad"}`;
     $("#nextQuestion").textContent=quiz.index===quiz.questions.length-1 ? "結果を見る" : "次の問題";
     $("#nextQuestion").classList.remove("hidden");
@@ -1428,9 +1973,13 @@
     const percent=Math.round(quiz.correct/quiz.questions.length*100);
     const record={
       id:`h${Date.now()}`, date:new Date().toISOString(), total:quiz.questions.length,
-      correct:quiz.correct, percent, detail:quiz.detail
+      correct:quiz.correct, percent, detail:quiz.detail, studyMode:quiz.settings.studyMode
     };
-    history.unshift(record); save(STORAGE.history,history);
+    history.unshift(record);
+    save(STORAGE.history,history);
+
+    updateLearningStatsFromQuiz(percent);
+    const newlyUnlocked = evaluateAchievements(true);
     $("#quizArea").classList.add("hidden");
     $("#resultArea").classList.remove("hidden");
     $("#resultPercent").textContent=`${percent}%`;
@@ -1439,9 +1988,20 @@
     $("#resultBreakdown").innerHTML=Object.entries(labels).map(([k,l])=>{
       const [c,t]=quiz.detail[k]; return `<div><strong>${l}</strong><br>${t?`${c} / ${t}`:"出題なし"}</div>`;
     }).join("");
+    const unlockNotice = $("#achievementUnlockNotice");
+    if (newlyUnlocked.length) {
+      unlockNotice.innerHTML =
+        `🎉 バッジ獲得！<br>${newlyUnlocked.map(item => escapeHtml(item.title)).join("・")}`;
+      unlockNotice.classList.remove("hidden");
+    } else {
+      unlockNotice.textContent = "";
+      unlockNotice.classList.add("hidden");
+    }
+
     $("#resultReviewFilter").value = "all";
     renderResultAnswers();
     renderHome();
+    renderBadges();
   }
   function showSetup() {
     hidePracticeFlash();
@@ -1449,6 +2009,11 @@
     $("#quizArea").classList.add("hidden");
     $("#resultArea").classList.add("hidden");
     $("#practiceSetup").classList.remove("hidden");
+    const unlockNotice = $("#achievementUnlockNotice");
+    if (unlockNotice) {
+      unlockNotice.textContent = "";
+      unlockNotice.classList.add("hidden");
+    }
     updatePracticeAvailability();
   }
 
@@ -1511,38 +2076,61 @@
   }
   function filteredWords() {
     const q=$("#wordSearch").value.trim().toLowerCase();
-    const topic=$("#wordTopicFilter").value, enabled=$("#wordEnabledFilter").value, source=$("#wordSourceFilter").value;
-    const filtered = allWords().filter(w=>
-      (!q || w.english.toLowerCase().includes(q) || w.japanese.toLowerCase().includes(q)) &&
-      (topic==="all" || w.topic===topic) &&
-      (source==="all" || w.source===source) &&
-      (enabled==="all" || (enabled==="enabled" ? isEnabled(w) : !isEnabled(w)))
-    );
+    const topic=$("#wordTopicFilter").value;
+    const enabled=$("#wordEnabledFilter").value;
+    const source=$("#wordSourceFilter").value;
+    const learning=$("#wordLearningFilter").value;
+
+    const filtered = allWords().filter(w=>{
+      const progress=getWordProgress(w.id);
+      const learningMatch =
+        learning==="all"
+        || (learning==="review" && progress.review)
+        || (learning==="untried" && progress.attempts===0)
+        || (learning==="attempted" && progress.attempts>0);
+
+      return (
+        (!q || w.english.toLowerCase().includes(q) || w.japanese.toLowerCase().includes(q)) &&
+        (topic==="all" || w.topic===topic) &&
+        (source==="all" || w.source===source) &&
+        (enabled==="all" || (enabled==="enabled" ? isEnabled(w) : !isEnabled(w))) &&
+        learningMatch
+      );
+    });
     return sortWords(filtered);
   }
   function renderWords() {
     const words=filteredWords(); visibleWordIds=words.map(w=>w.id);
     updateSortHeaders();
-    $("#wordTableBody").innerHTML=words.map(w=>`<tr>
+    $("#wordTableBody").innerHTML=words.map(w=>{
+      const learningStatus=wordLearningStatus(w);
+      return `<tr>
       <td><input type="checkbox" class="word-enabled" data-id="${w.id}" ${isEnabled(w)?"checked":""} aria-label="${escapeHtml(w.english)}を出題"></td>
+      <td><span class="learning-status ${learningStatus.type}">${escapeHtml(learningStatus.label)}</span></td>
       <td><strong>${escapeHtml(w.english)}</strong></td><td>${escapeHtml(w.japanese)}</td><td>${topics[w.topic]||w.topic}</td>
       <td>${w.source==="preset"?"プリセット":"個別登録"}</td>
       <td><button class="icon-button speak-word" data-text="${escapeHtml(w.english)}">🔊</button></td>
       <td>${w.source==="custom"?`<button class="danger-outline delete-word" data-id="${w.id}">削除</button>`:"—"}</td>
-    </tr>`).join("");
+    </tr>`;
+    }).join("");
     $("#wordCountLabel").textContent=`${words.length}件表示／全${allWords().length}件`;
     $$(".word-enabled").forEach(x=>x.addEventListener("change",e=>{setEnabled(e.target.dataset.id,e.target.checked);renderHome();updatePracticeAvailability();}));
     $$(".speak-word").forEach(x=>x.addEventListener("click",e=>speak(e.currentTarget.dataset.text)));
     $$(".delete-word").forEach(x=>x.addEventListener("click",e=>{
       const id=e.currentTarget.dataset.id, w=customWords.find(x=>x.id===id);
       if(w && confirm(`「${w.english}」を削除しますか？`)){
-        customWords=customWords.filter(x=>x.id!==id); disabledIds.delete(id);
-        save(STORAGE.custom,customWords); save(STORAGE.disabled,[...disabledIds]); renderWords();renderHome();updatePracticeAvailability();
+        customWords=customWords.filter(x=>x.id!==id);
+        disabledIds.delete(id);
+        delete wordProgress[id];
+        save(STORAGE.custom,customWords);
+        save(STORAGE.disabled,[...disabledIds]);
+        save(STORAGE.wordProgress,wordProgress);
+        renderWords();renderHome();updatePracticeAvailability();
       }
     }));
   }
   function initWordList() {
-    ["#wordSearch","#wordTopicFilter","#wordEnabledFilter","#wordSourceFilter"].forEach(s=>$(s).addEventListener("input",renderWords));
+    ["#wordSearch","#wordTopicFilter","#wordEnabledFilter","#wordSourceFilter","#wordLearningFilter"].forEach(s=>$(s).addEventListener("input",renderWords));
     $$(".sort-button").forEach(button => button.addEventListener("click", () => {
       const key = button.dataset.sort;
       if (wordSort.key === key) wordSort.direction = wordSort.direction === "asc" ? "desc" : "asc";
@@ -1551,8 +2139,25 @@
     }));
     $("#enableVisible").addEventListener("click",()=>{visibleWordIds.forEach(id=>setEnabled(id,true));renderWords();renderHome();updatePracticeAvailability();});
     $("#disableVisible").addEventListener("click",()=>{visibleWordIds.forEach(id=>setEnabled(id,false));renderWords();renderHome();updatePracticeAvailability();});
-    $("#exportWords").addEventListener("click",()=>downloadCsv("english_words",["english","japanese","category","source","enabled"],
-      allWords().map(w=>[w.english,w.japanese,topics[w.topic]||w.topic,w.source==="preset"?"preset":"custom",isEnabled(w)?"1":"0"])));
+    $("#exportWords").addEventListener("click",()=>downloadCsv(
+      "english_words",
+      ["english","japanese","category","source","enabled","attempts","correct","wrong","review_target","review_correct_streak"],
+      allWords().map(w=>{
+        const p=getWordProgress(w.id);
+        return [
+          w.english,
+          w.japanese,
+          topics[w.topic]||w.topic,
+          w.source==="preset"?"preset":"custom",
+          isEnabled(w)?"1":"0",
+          p.attempts,
+          p.correct,
+          p.wrong,
+          p.review?"1":"0",
+          p.reviewCorrectStreak
+        ];
+      })
+    ));
   }
 
   function renderHistory() {
@@ -1585,6 +2190,7 @@
   }
 
   function init() {
+    initializeLearningData();
     initNavigation();
     initTheme();
     populateTopics();
@@ -1595,6 +2201,7 @@
     initHistory();
     renderHome();
     renderWords();
+    renderBadges();
     renderHistory();
     updatePracticeAvailability();
   }
