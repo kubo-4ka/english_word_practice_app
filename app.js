@@ -1,6 +1,9 @@
 (() => {
   "use strict";
 
+  const APP_VERSION = "023";
+  const DATA_SCHEMA_VERSION = 2;
+
   const STORAGE = {
     custom: "ewp_custom_words_v1",
     disabled: "ewp_disabled_words_v1",
@@ -9,7 +12,8 @@
     voice: "ewp_voice_v1",
     wordProgress: "ewp_word_progress_v1",
     learningStats: "ewp_learning_stats_v1",
-    achievements: "ewp_achievements_v1"
+    achievements: "ewp_achievements_v1",
+    sync: "ewp_sync_state_v1"
   };
 
   const topics = {
@@ -17,6 +21,7 @@
     numbers: "数字",
     calendar: "カレンダー",
     family: "家族",
+    peopleRelations: "人・人間関係",
     stationery: "文房具",
     school: "学校",
     sports: "運動",
@@ -30,6 +35,11 @@
     directions: "道案内・方向",
     countries: "国名",
     questionWords: "疑問詞・質問表現",
+    shapes: "図形",
+    shoppingMoney: "買い物・お金",
+    mediaEntertainment: "娯楽・メディア",
+    leisureEvents: "行事・レジャー",
+    generalWords: "基本・汎用語",
     buildings: "建物・場所",
     clothing: "衣服",
     transportation: "交通",
@@ -57,19 +67,73 @@
     { material:"rainbow", size:"large", label:"レインボー" }
   ];
 
-  const BADGE_MESSAGES = [
-    ["はじめの一歩！この調子で続けよう！","Great start! Keep going!"],
-    ["いいペース！少しずつ力になっているよ！","Nice pace! Keep it up!"],
-    ["継続できているね！","Great work! Stay with it!"],
-    ["もう慣れてきたね！","You're getting good!"],
-    ["かなり力がついてきた！","You're getting stronger!"],
-    ["もうすぐ大台！","Almost there!"],
-    ["100達成！すごい！","Amazing! You reached 100!"],
-    ["すごい継続力！","Great dedication!"],
-    ["かなりの達人だね！","You're becoming an expert!"],
-    ["マスター目前！","Almost a master!"],
-    ["もうマスターだね！","You're a word master!"]
-  ];
+  const BADGE_MESSAGES = {
+    sessions: [
+      ["5回完走！練習のリズムができ始めたね！","Five sessions done! Your practice rhythm is starting!"],
+      ["10回完走！続けることが、もう力になっているよ！","Ten sessions complete! Practice is becoming a habit!"],
+      ["20回完走！コツコツ続ける力が育ってきたね！","Twenty sessions! Your steady effort is growing!"],
+      ["40回完走！たくさんの練習を積み重ねたね！","Forty sessions! You have built up lots of practice!"],
+      ["60回完走！英単語練習がしっかり習慣になってきた！","Sixty sessions! Word practice is becoming a strong habit!"],
+      ["80回完走！ここまで続けた集中力がすごい！","Eighty sessions! Great focus and persistence!"],
+      ["100回完走！大きな節目を最後まで走り切ったね！","One hundred sessions! You reached a huge milestone!"],
+      ["200回完走！積み重ねた時間が大きな自信になるね！","Two hundred sessions! All that practice builds real confidence!"],
+      ["300回完走！続ける力はもう立派な特技だね！","Three hundred sessions! Consistency is now your special skill!"],
+      ["400回完走！ゴールまでやり切る力が本当に強い！","Four hundred sessions! Your power to finish is amazing!"],
+      ["500回完走！ものすごい継続記録を作ったね！","Five hundred sessions! What an incredible practice record!" ]
+    ],
+    perfect: [
+      ["満点5回！ていねいに答える力が光っているよ！","Five perfect scores! Your careful answers are shining!"],
+      ["満点10回！正確さがしっかり身についてきたね！","Ten perfect scores! Your accuracy is getting strong!"],
+      ["満点20回！知っている単語を確実に答えられているね！","Twenty perfect scores! You can answer known words with confidence!"],
+      ["満点40回！最後の1問まで集中できている証拠だね！","Forty perfect scores! You stay focused to the very last question!"],
+      ["満点60回！高い正答率を何度も再現できてすごい！","Sixty perfect scores! You can repeat excellent results again and again!"],
+      ["満点80回！安定した正確さが大きな強みになっているよ！","Eighty perfect scores! Steady accuracy is now a real strength!"],
+      ["満点100回！100回のパーフェクトは圧巻だね！","One hundred perfect scores! That is an amazing achievement!"],
+      ["満点200回！ミスなく解き切る力がとても頼もしい！","Two hundred perfect scores! Your mistake-free skill is impressive!"],
+      ["満点300回！正確さと集中力、どちらも達人級だね！","Three hundred perfect scores! Your accuracy and focus are expert level!"],
+      ["満点400回！パーフェクトを積み上げる力が別格だね！","Four hundred perfect scores! Your perfect-score streak is outstanding!"],
+      ["満点500回！まさにパーフェクトマスター！","Five hundred perfect scores! You are a true perfect-score master!" ]
+    ],
+    reading: [
+      ["読み5問正解！英単語を見て意味をつかめたね！","Five reading answers right! You can connect words with meanings!"],
+      ["読み10問正解！見た瞬間に分かる単語が増えてきた！","Ten reading answers right! More words are becoming familiar at a glance!"],
+      ["読み20問正解！英単語と日本語の結びつきが強くなっているよ！","Twenty reading answers right! Word-meaning connections are getting stronger!"],
+      ["読み40問正解！読む力がぐんぐん広がっているね！","Forty reading answers right! Your reading power is growing fast!"],
+      ["読み60問正解！たくさんの単語を見分けられるようになった！","Sixty reading answers right! You can recognize many more words now!"],
+      ["読み80問正解！意味を思い出す速さも上がってきたね！","Eighty reading answers right! You are recalling meanings faster too!"],
+      ["読み100問正解！英単語を読む大きな節目を突破！","One hundred reading answers right! A big reading milestone cleared!"],
+      ["読み200問正解！語彙を見て理解する力がかなり育ったね！","Two hundred reading answers right! Your word recognition is very strong!"],
+      ["読み300問正解！初見の英語にも向き合える土台ができてきた！","Three hundred reading answers right! You have built a strong reading foundation!"],
+      ["読み400問正解！読む力はもうかなりの達人級！","Four hundred reading answers right! Your reading skill is expert level!"],
+      ["読み500問正解！たくさんの英単語を読み解いた読解マスター！","Five hundred reading answers right! You are a word-reading master!" ]
+    ],
+    writing: [
+      ["書き5問正解！英単語のつづりを自分で組み立てられたね！","Five writing answers right! You can build English spellings yourself!"],
+      ["書き10問正解！文字の並びが少しずつ身についてきた！","Ten writing answers right! Letter patterns are starting to stick!"],
+      ["書き20問正解！つづりを思い出す力が育っているよ！","Twenty writing answers right! Your spelling memory is growing!"],
+      ["書き40問正解！一文字ずつ確かめる力が強くなってきたね！","Forty writing answers right! Your careful spelling skill is getting stronger!"],
+      ["書き60問正解！英単語の形をしっかり覚えられている！","Sixty writing answers right! You are remembering word shapes well!"],
+      ["書き80問正解！難しいつづりにも落ち着いて挑戦できているね！","Eighty writing answers right! You can tackle tricky spellings calmly!"],
+      ["書き100問正解！100問分のつづり練習を力に変えたね！","One hundred writing answers right! A hundred spellings are now part of your skill!"],
+      ["書き200問正解！書いて確かめる力が大きな武器になっているよ！","Two hundred writing answers right! Spelling has become a powerful skill!"],
+      ["書き300問正解！文字の並びを見抜く力はもう上級者！","Three hundred writing answers right! Your spelling sense is advanced now!"],
+      ["書き400問正解！つづりへの自信がしっかり積み上がったね！","Four hundred writing answers right! Your spelling confidence is very strong!"],
+      ["書き500問正解！英単語を形にできるスペリングマスター！","Five hundred writing answers right! You are a true spelling master!" ]
+    ],
+    listening: [
+      ["リスニング5問正解！英語の音から単語を見つけられたね！","Five listening answers right! You can find words from their sounds!"],
+      ["リスニング10問正解！耳で聞いた英語が少しずつ分かってきた！","Ten listening answers right! Spoken English is becoming clearer!"],
+      ["リスニング20問正解！音とつづりのつながりが育っているよ！","Twenty listening answers right! Sound and spelling are connecting in your mind!"],
+      ["リスニング40問正解！英語の音を聞き分ける力が上がってきたね！","Forty listening answers right! Your ear for English is getting sharper!"],
+      ["リスニング60問正解！聞こえた単語を落ち着いて選べている！","Sixty listening answers right! You can choose heard words with confidence!"],
+      ["リスニング80問正解！耳から覚えた英単語がどんどん増えているね！","Eighty listening answers right! Your sound-based vocabulary keeps growing!"],
+      ["リスニング100問正解！100回の聞き取り成功、大きな一歩！","One hundred listening answers right! A hundred successful listens is a big step!"],
+      ["リスニング200問正解！英語を聞く経験がしっかり積み上がったね！","Two hundred listening answers right! You have built lots of listening experience!"],
+      ["リスニング300問正解！音から単語をつかむ力はもう上級者！","Three hundred listening answers right! Your listening skill is advanced now!"],
+      ["リスニング400問正解！聞き取る力がとても頼もしくなった！","Four hundred listening answers right! Your English ear is impressively strong!"],
+      ["リスニング500問正解！たくさんの英語を聞き取ったリスニングマスター！","Five hundred listening answers right! You are a true listening master!" ]
+    ]
+  };
 
   const presetWords = [
     ["red","赤","colors"],["blue","青","colors"],["yellow","黄色","colors"],["green","緑","colors"],["white","白","colors"],["black","黒","colors"],["pink","桃色","colors"],["orange","オレンジ色","colors"],
@@ -222,7 +286,7 @@
     ["leaf","葉","nature"],
     ["rock","岩","nature"],
     ["island","島","nature"],
-    ["beach","砂浜","nature"],
+    ["beach","砂浜","leisureEvents"],
     ["field","野原","nature"],
     ["stormy","嵐の","weather"],
     ["foggy","霧の深い","weather"],
@@ -305,7 +369,7 @@
     ["what day","何曜日","questionWords"],
     ["what date","何日・何月何日","questionWords"],
     ["hospital","病院","buildings"],
-    ["supermarket","スーパーマーケット","buildings"],
+    ["supermarket","スーパーマーケット","shoppingMoney"],
     ["bank","銀行","buildings"],
     ["post office","郵便局","buildings"],
     ["police station","警察署","buildings"],
@@ -316,10 +380,10 @@
     ["airport","空港","buildings"],
     ["bakery","パン屋","buildings"],
     ["pharmacy","薬局","buildings"],
-    ["convenience store","コンビニ","buildings"],
+    ["convenience store","コンビニ","shoppingMoney"],
     ["city hall","市役所","buildings"],
-    ["movie theater","映画館","buildings"],
-    ["shopping mall","ショッピングモール","buildings"],
+    ["movie theater","映画館","mediaEntertainment"],
+    ["shopping mall","ショッピングモール","shoppingMoney"],
     ["church","教会","buildings"],
     ["temple","寺","buildings"],
     ["castle","城","buildings"],
@@ -376,7 +440,7 @@
     ["sofa","ソファ","home"],
     ["lamp","ランプ","home"],
     ["clock","時計","home"],
-    ["television","テレビ","home"],
+    ["television","テレビ","mediaEntertainment"],
     ["refrigerator","冷蔵庫","home"],
     ["microwave","電子レンジ","home"],
     ["sink","流し台","home"],
@@ -391,7 +455,7 @@
     ["eat dinner","夕食を食べる","dailyActions"],
     ["take a bath","風呂に入る","dailyActions"],
     ["go home","家に帰る","dailyActions"],
-    ["go shopping","買い物に行く","dailyActions"],
+    ["go shopping","買い物に行く","shoppingMoney"],
     ["study","勉強する","dailyActions"],
     ["read","読む","dailyActions"],
     ["write","書く","dailyActions"],
@@ -404,26 +468,26 @@
     ["watch","見る","dailyActions"],
     ["open","開ける","dailyActions"],
     ["close","閉める","dailyActions"],
-    ["friend","友達","other"],
-    ["people","人々","other"],
-    ["person","人","other"],
-    ["child","子ども","other"],
-    ["boy","男の子","other"],
-    ["girl","女の子","other"],
-    ["man","男性","other"],
-    ["woman","女性","other"],
-    ["name","名前","other"],
-    ["thing","物","other"],
-    ["place","場所","other"],
-    ["idea","考え","other"],
-    ["problem","問題","other"],
-    ["question","質問","other"],
-    ["answer","答え","other"],
-    ["story","物語","other"],
-    ["picture","絵・写真","other"],
-    ["game","ゲーム","other"],
-    ["party","パーティー","other"],
-    ["birthday","誕生日","other"],
+    ["friend","友達","peopleRelations"],
+    ["people","人々","peopleRelations"],
+    ["person","人","peopleRelations"],
+    ["child","子ども","peopleRelations"],
+    ["boy","男の子","peopleRelations"],
+    ["girl","女の子","peopleRelations"],
+    ["man","男性","peopleRelations"],
+    ["woman","女性","peopleRelations"],
+    ["name","名前","generalWords"],
+    ["thing","物","generalWords"],
+    ["place","場所","generalWords"],
+    ["idea","考え","generalWords"],
+    ["problem","問題","generalWords"],
+    ["question","質問","questionWords"],
+    ["answer","答え","questionWords"],
+    ["story","物語","mediaEntertainment"],
+    ["picture","絵・写真","mediaEntertainment"],
+    ["game","ゲーム","mediaEntertainment"],
+    ["party","パーティー","leisureEvents"],
+    ["birthday","誕生日","leisureEvents"],
     ["sour","すっぱい","qualities"],
     ["sweet","甘い","qualities"],
     ["salty","塩からい","qualities"],
@@ -529,13 +593,13 @@
     ["clown","ピエロ","jobs"],
     ["detective","探偵","jobs"],
     ["volunteer","ボランティア","jobs"],
-    ["store clerk","店員","jobs"],
+    ["store clerk","店員","shoppingMoney"],
     ["author","著者・作家","jobs"],
     ["cave","洞くつ","buildings"],
     ["shrine","神社","buildings"],
     ["art museum","美術館","buildings"],
     ["theater","劇場","buildings"],
-    ["amusement park","遊園地","buildings"],
+    ["amusement park","遊園地","leisureEvents"],
     ["science museum","科学博物館","buildings"],
     ["cafeteria","食堂","buildings"],
     ["gym","体育館","buildings"],
@@ -543,7 +607,7 @@
     ["restroom","お手洗い","buildings"],
     ["science lab","理科室","buildings"],
     ["coffee shop","喫茶店","buildings"],
-    ["store","店","buildings"],
+    ["store","店","shoppingMoney"],
     ["animal shelter","動物保護施設","buildings"],
     ["sandals","サンダル","clothing"],
     ["glasses","めがね","clothing"],
@@ -614,30 +678,334 @@
     ["borrow","借りる","dailyActions"],
     ["push","押す","dailyActions"],
     ["make","作る","dailyActions"],
-    ["square","正方形","other"],
-    ["circle","円","other"],
-    ["triangle","三角形","other"],
-    ["rectangle","長方形","other"],
-    ["oval","だ円形","other"],
-    ["flowerpot","植木鉢","other"],
-    ["fountain","噴水","other"],
-    ["bottle","びん・ボトル","other"],
-    ["toy","おもちゃ","other"],
-    ["present","プレゼント","other"],
-    ["birthday cake","誕生日ケーキ","other"],
-    ["party hat","パーティー帽子","other"],
-    ["phone","電話","other"],
-    ["screen","画面","other"],
-    ["video game","テレビゲーム","other"],
-    ["trip","旅行","other"],
-    ["sunscreen","日焼け止め","other"],
-    ["roof","屋根","other"],
-    ["smoke","煙","other"],
-    ["sandcastle","砂の城","other"],
-    ["roller coaster","ジェットコースター","other"],
-    ["plan","予定・計画","other"],
-    ["favorite","お気に入りの","other"]
+    ["square","正方形","shapes"],
+    ["circle","円","shapes"],
+    ["triangle","三角形","shapes"],
+    ["rectangle","長方形","shapes"],
+    ["oval","だ円形","shapes"],
+    ["flowerpot","植木鉢","home"],
+    ["fountain","噴水","buildings"],
+    ["bottle","びん・ボトル","home"],
+    ["toy","おもちゃ","leisureEvents"],
+    ["present","プレゼント","leisureEvents"],
+    ["birthday cake","誕生日ケーキ","leisureEvents"],
+    ["party hat","パーティー帽子","leisureEvents"],
+    ["phone","電話","mediaEntertainment"],
+    ["screen","画面","mediaEntertainment"],
+    ["video game","テレビゲーム","mediaEntertainment"],
+    ["trip","旅行","leisureEvents"],
+    ["sunscreen","日焼け止め","home"],
+    ["roof","屋根","home"],
+    ["smoke","煙","nature"],
+    ["sandcastle","砂の城","leisureEvents"],
+    ["roller coaster","ジェットコースター","leisureEvents"],
+    ["plan","予定・計画","timeFrequency"],
+    ["favorite","お気に入りの","qualities"],
+    ["dirty","汚れた","qualities"],
+    ["movie","映画","mediaEntertainment"],
+    ["turn right","右に曲がる","directions"],
+    ["first corner","最初の角","directions"],
+    ["on your left","向かって左に","directions"],
+    ["something","何か・あるもの","generalWords"],
+    ["bright","明るい・輝いている","qualities"],
+    ["Earth","地球","nature"],
+    ["go around","～の周りを回る","dailyActions"],
+    ["player","選手","sports"],
+    ["bookstore","本屋","shoppingMoney"],
+    ["map","地図","directions"],
+    ["schedule","予定表・時間割","school"],
+    ["change","変わる・変える","dailyActions"],
+    ["arts and crafts","図工・工作","school"],
+    ["polka-dot","水玉模様の","qualities"],
+    ["dollar","ドル","shoppingMoney"],
+    ["neighbor","近所の人","peopleRelations"],
+    ["twins","双子","family"],
+    ["tall","背が高い","qualities"],
+    ["sore throat","のどの痛み","body"],
+    ["headache","頭痛","body"],
+    ["sign","標識・看板","directions"],
+    ["carefully","注意深く","qualities"],
+    ["hurt","傷つける・痛む","dailyActions"],
+    ["already","もう・すでに","timeFrequency"],
+    ["hurry up","急ぐ","dailyActions"],
+    ["school bus","スクールバス","transportation"],
+    ["enough time","十分な時間","timeFrequency"],
+    ["percent off","～パーセント引き","numbers"],
+    ["half price","半額","shoppingMoney"],
+    ["special sale","特売","shoppingMoney"],
+    ["item","商品・品物","shoppingMoney"],
+    ["Italian food","イタリア料理","food"],
+    ["famous","有名な","qualities"],
+    ["town","町","buildings"],
+    ["sunset","夕日・日没","nature"],
+    ["dinner time","夕食の時間","timeFrequency"],
+    ["musician","音楽家","jobs"],
+    ["guitar","ギター","school"],
+    ["meal","食事","food"],
+    ["chef","シェフ","jobs"],
+    ["spaghetti","スパゲッティ","food"],
+    ["dessert","デザート","food"],
+    ["homemade","手作りの","qualities"],
+    ["magazine","雑誌","mediaEntertainment"],
+    ["decide","決める","dailyActions"],
+    ["especially","特に","qualities"],
+    ["choose","選ぶ","dailyActions"],
+    ["frame","自転車のフレーム","transportation"],
+    ["tires","タイヤ","transportation"],
+    ["handlebars","自転車のハンドル","transportation"],
+    ["baseball team","野球チーム","sports"],
+    ["model","型・モデル","generalWords"],
+    ["happen","起こる","dailyActions"],
+    ["TV program","テレビ番組","mediaEntertainment"],
+    ["come in","中に入る","dailyActions"],
+    ["station","駅","buildings"],
+    ["go straight down","この道をまっすぐ進む","directions"],
+    ["pass","手渡す","dailyActions"],
+    ["mom","母","family"],
+    ["mum","母","family"],
+    ["dad","父","family"],
+    ["grandma","祖母","family"],
+    ["grandpa","祖父","family"],
+    ["bunny","うさぎ","animals"],
+    ["grey","灰色","colors"],
+    ["fall","秋","calendar"],
+    ["pencil box","筆箱","stationery"],
+    ["maths","算数","school"],
+    ["physician","医師","jobs"],
+    ["veterinarian","獣医","jobs"],
+    ["cinema","映画館","mediaEntertainment"],
+    ["trainers","スニーカー","clothing"],
+    ["automobile","車","transportation"],
+    ["bike","自転車","transportation"],
+    ["plane","飛行機","transportation"],
+    ["cab","タクシー","transportation"],
+    ["TV","テレビ","mediaEntertainment"],
+    ["fridge","冷蔵庫","home"],
+    ["have breakfast","朝食を食べる","dailyActions"],
+    ["have lunch","昼食を食べる","dailyActions"],
+    ["have dinner","夕食を食べる","dailyActions"],
+    ["tasty","おいしい","qualities"],
+    ["courteous","礼儀正しい","qualities"],
+    ["well-liked","人気のある","qualities"],
+    ["shop assistant","店員","shoppingMoney"],
+    ["washroom","お手洗い","buildings"],
+    ["cafe","喫茶店","buildings"],
+    ["shop","店","shoppingMoney"],
+    ["eyeglasses","めがね","clothing"],
+    ["donut","ドーナツ","food"],
+    ["rucksack","リュックサック","school"],
+    ["dish","皿","home"],
+    ["telephone","電話","mediaEntertainment"],
+    ["unclean","汚れた","qualities"],
+    ["film","映画","mediaEntertainment"],
+    ["bookshop","本屋","shoppingMoney"],
+    ["neighbour","近所の人","peopleRelations"],
+    ["well-known","有名な","qualities"],
+    ["tyres","タイヤ","transportation"],
+    ["television program","テレビ番組","mediaEntertainment"],
+    ["mouse","ネズミ","animals"],
+    ["snake","ヘビ","animals"],
+    ["frog","カエル","animals"],
+    ["turtle","カメ","animals"],
+    ["panda","パンダ","animals"],
+    ["deer","シカ","animals"],
+    ["fox","キツネ","animals"],
+    ["wolf","オオカミ","animals"],
+    ["watermelon","スイカ","food"],
+    ["onion","玉ねぎ","food"],
+    ["cucumber","きゅうり","food"],
+    ["cabbage","キャベツ","food"],
+    ["corn","とうもろこし","food"],
+    ["beef","牛肉","food"],
+    ["pork","豚肉","food"],
+    ["wrist","手首","body"],
+    ["ankle","足首","body"],
+    ["tongue","舌","body"],
+    ["lips","唇","body"],
+    ["cloud","雲","nature"],
+    ["wind","風","nature"],
+    ["rainbow","虹","nature"],
+    ["jeans","ジーンズ","clothing"],
+    ["tie","ネクタイ","clothing"],
+    ["blouse","ブラウス","clothing"],
+    ["raincoat","レインコート","clothing"],
+    ["swimsuit","水着","clothing"],
+    ["knife","ナイフ","home"],
+    ["washing machine","洗濯機","home"],
+    ["dishwasher","食器洗い機","home"],
+    ["mirror","鏡","home"],
+    ["pillow","枕","home"],
+    ["blanket","毛布","home"],
+    ["lend","貸す","dailyActions"],
+    ["leave","出発する","dailyActions"],
+    ["pull","引く","dailyActions"],
+    ["learn","学ぶ","dailyActions"],
+    ["buy","買う","dailyActions"],
+    ["sell","売る","dailyActions"],
+    ["soft","柔らかい","qualities"],
+    ["dark","暗い","qualities"],
+    ["noisy","うるさい","qualities"],
+    ["quiet","静かな","qualities"],
+    ["cheap","安い","qualities"],
+    ["expensive","高価な","qualities"],
+    ["money","お金","shoppingMoney"],
+    ["price","値段","shoppingMoney"],
+    ["cashier","レジ係","shoppingMoney"],
+    ["receipt","レシート","shoppingMoney"],
+    ["picnic","ピクニック","leisureEvents"],
+    ["camping","キャンプ","leisureEvents"],
+    ["festival","お祭り","leisureEvents"],
+    ["classmate","クラスメート","peopleRelations"],
+    ["teammate","チームメート","peopleRelations"],
+    ["radio","ラジオ","mediaEntertainment"],
+    ["newspaper","新聞","mediaEntertainment"],
+    ["comic book","漫画","mediaEntertainment"],
+    ["wheel","車輪","transportation"],
+    ["pedal","ペダル","transportation"],
+    ["brake","ブレーキ","transportation"]
   ].map((w, i) => ({ id:`p${i+1}`, english:w[0], japanese:w[1], topic:w[2], source:"preset" }));
+
+  // v019: 英語表現はすべて独立した単語IDを持つ。
+  // 同義語・短縮形・地域差などは「ID同士の関係」として管理し、進捗は各IDで独立させる。
+  // forms の先頭は、v018以前に代表語として扱っていた表現。legacyAttached は移行処理にだけ使用する。
+  const PRESET_SYNONYM_GROUP_DEFS = [
+    { kind:"日常表現", forms:["mother","mom","mum"], legacyAttached:true },
+    { kind:"日常表現", forms:["father","dad"], legacyAttached:true },
+    { kind:"日常表現", forms:["grandmother","grandma"], legacyAttached:true },
+    { kind:"日常表現", forms:["grandfather","grandpa"], legacyAttached:true },
+    { kind:"日常表現", forms:["rabbit","bunny"], legacyAttached:true },
+    { kind:"つづり違い", forms:["gray","grey"], legacyAttached:true },
+    { kind:"地域差", forms:["autumn","fall"], legacyAttached:true },
+    { kind:"言い換え", forms:["pencil case","pencil box"], legacyAttached:true },
+    { kind:"地域差", forms:["math","maths"], legacyAttached:true },
+    { kind:"言い換え", forms:["doctor","physician"], legacyAttached:true },
+    { kind:"短縮形", forms:["vet","veterinarian"], legacyAttached:true },
+    { kind:"地域差・言い換え", forms:["movie theater","cinema"], legacyAttached:true },
+    { kind:"地域差", forms:["sneakers","trainers"], legacyAttached:true },
+    { kind:"言い換え", forms:["car","automobile"], legacyAttached:true },
+    { kind:"短縮形", forms:["bicycle","bike"], legacyAttached:true },
+    { kind:"短縮形", forms:["airplane","plane"], legacyAttached:true },
+    { kind:"言い換え", forms:["taxi","cab"], legacyAttached:true },
+    { kind:"略語", forms:["television","TV"], legacyAttached:true },
+    { kind:"短縮形", forms:["refrigerator","fridge"], legacyAttached:true },
+    { kind:"言い換え", forms:["eat breakfast","have breakfast"], legacyAttached:true },
+    { kind:"言い換え", forms:["eat lunch","have lunch"], legacyAttached:true },
+    { kind:"言い換え", forms:["eat dinner","have dinner"], legacyAttached:true },
+    { kind:"同義語", forms:["delicious","tasty"], legacyAttached:true },
+    { kind:"同義語", forms:["polite","courteous"], legacyAttached:true },
+    { kind:"言い換え", forms:["popular","well-liked"], legacyAttached:true },
+    { kind:"地域差・言い換え", forms:["store clerk","shop assistant"], legacyAttached:true },
+    { kind:"地域差", forms:["restroom","washroom"], legacyAttached:true },
+    { kind:"言い換え", forms:["coffee shop","cafe"], legacyAttached:true },
+    { kind:"地域差", forms:["store","shop"], legacyAttached:true },
+    { kind:"言い換え", forms:["glasses","eyeglasses"], legacyAttached:true },
+    { kind:"つづり違い", forms:["doughnut","donut"], legacyAttached:true },
+    { kind:"地域差", forms:["backpack","rucksack"], legacyAttached:true },
+    { kind:"近い表現", forms:["plate","dish"], legacyAttached:true },
+    { kind:"短縮形", forms:["phone","telephone"], legacyAttached:true },
+    { kind:"同義語", forms:["dirty","unclean"], legacyAttached:true },
+    { kind:"地域差・言い換え", forms:["movie","film"], legacyAttached:true },
+    { kind:"地域差", forms:["bookstore","bookshop"], legacyAttached:true },
+    { kind:"つづり違い", forms:["neighbor","neighbour"], legacyAttached:true },
+    { kind:"同義語", forms:["famous","well-known"], legacyAttached:true },
+    { kind:"つづり違い", forms:["tires","tyres"], legacyAttached:true },
+    { kind:"略語・言い換え", forms:["TV program","television program"], legacyAttached:true },
+    { kind:"同義語", forms:["sofa","couch"] },
+    { kind:"近い表現", forms:["speak","talk"] },
+    { kind:"近い表現", forms:["playground","schoolyard"] },
+    { kind:"同義語", forms:["next to","beside"] }
+  ];
+
+  // 完全な同義語ではないが、四択で同時に出すと意味が近すぎる組み合わせ。
+  // これは「同義語あり」表示や同義語マスターには含めず、誤答候補の衝突回避だけに使う。
+  const PRESET_CHOICE_CONFLICT_GROUP_DEFS = [
+    ["cook","chef"],
+    ["writer","author"],
+    ["forest","woods"],
+    ["hard","difficult"]
+  ];
+
+  // v023: 対義語・対になる表現も、同義語とは独立した「単語ID同士の関係」として管理する。
+  // strictな対義語に加え、方向・売買・貸借など学習上「対」で覚えやすい語も relation kind を分けて扱う。
+  const PRESET_ANTONYM_GROUP_DEFS = [
+    { kind:"対になる色", forms:["white","black"] },
+    { kind:"対になる季節", forms:["summer","winter"] },
+    { kind:"対になる季節", forms:["spring","autumn"] },
+    { kind:"対義語", forms:["hot","cold"] },
+    { kind:"対義語", forms:["warm","cool"] },
+    { kind:"対義語", forms:["happy","sad"] },
+    { kind:"方向の対", forms:["left","right"] },
+    { kind:"方向の対", forms:["north","south"] },
+    { kind:"方向の対", forms:["east","west"] },
+    { kind:"対義語", forms:["near","far"] },
+    { kind:"対義語", forms:["wet","dry"] },
+    { kind:"位置の対", forms:["inside","outside"] },
+    { kind:"方向の対", forms:["up","down"] },
+    { kind:"方向の対", forms:["forward","backwards"] },
+    { kind:"位置の対", forms:["above","below"] },
+    { kind:"位置の対", forms:["top","bottom"] },
+    { kind:"時間の対", forms:["before","after"] },
+    { kind:"時間の対", forms:["early","late"] },
+    { kind:"頻度の対", forms:["always","never"] },
+    { kind:"対義語", forms:["empty","full"] },
+    { kind:"対義語", forms:["same","different"] },
+    { kind:"対義語", forms:["long","short"] },
+    { kind:"対義語", forms:["heavy","light"] },
+    { kind:"対義語", forms:["deep","shallow"] },
+    { kind:"対義語", forms:["fast","slow"] },
+    { kind:"対義語", forms:["thin","thick"] },
+    { kind:"対義語", forms:["narrow","wide"] },
+    { kind:"対義語", forms:["difficult","easy"] },
+    { kind:"対義語", forms:["hard","soft"] },
+    { kind:"対義語", forms:["bright","dark"] },
+    { kind:"対義語", forms:["noisy","quiet"] },
+    { kind:"対義語", forms:["cheap","expensive"] },
+    { kind:"対になる動作", forms:["open","close"] },
+    { kind:"対になる動作", forms:["sit","stand"] },
+    { kind:"対になる動作", forms:["arrive","leave"] },
+    { kind:"対になる動作", forms:["borrow","lend"] },
+    { kind:"対になる動作", forms:["push","pull"] },
+    { kind:"対になる動作", forms:["buy","sell"] }
+  ];
+
+  const presetWordByEnglish = new Map(presetWords.map(word => [word.english.toLowerCase(), word]));
+  const presetSynonymGroupById = new Map();
+  const synonymGroupMeta = new Map();
+  const presetAntonymRelationsById = new Map();
+  const choiceGroupById = new Map();
+
+  PRESET_SYNONYM_GROUP_DEFS.forEach((definition, index) => {
+    const key = `preset-syn-${index + 1}`;
+    const members = definition.forms
+      .map(form => presetWordByEnglish.get(form.toLowerCase()))
+      .filter(Boolean);
+    if (members.length < 2) return;
+    synonymGroupMeta.set(key, { kind:definition.kind || "同義語・言い換え" });
+    for (const word of members) {
+      presetSynonymGroupById.set(word.id, key);
+      choiceGroupById.set(word.id, key);
+    }
+  });
+
+  PRESET_ANTONYM_GROUP_DEFS.forEach((definition, index) => {
+    const key = `preset-ant-${index + 1}`;
+    const members = definition.forms
+      .map(form => presetWordByEnglish.get(form.toLowerCase()))
+      .filter(Boolean);
+    if (members.length < 2) return;
+    for (const word of members) {
+      if (!presetAntonymRelationsById.has(word.id)) presetAntonymRelationsById.set(word.id, []);
+      presetAntonymRelationsById.get(word.id).push({ key, kind:definition.kind || "対義語" });
+    }
+  });
+
+  PRESET_CHOICE_CONFLICT_GROUP_DEFS.forEach((forms, index) => {
+    const key = `choice-conflict-${index + 1}`;
+    for (const form of forms) {
+      const word = presetWordByEnglish.get(form.toLowerCase());
+      if (word && !choiceGroupById.has(word.id)) choiceGroupById.set(word.id, key);
+    }
+  });
 
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
@@ -651,14 +1019,166 @@
   let wordProgress = load(STORAGE.wordProgress, {});
   let learningStats = load(STORAGE.learningStats, null);
   let achievements = load(STORAGE.achievements, {});
+  let syncState = load(STORAGE.sync, null);
   let quiz = null;
   let visibleWordIds = [];
   let lastSettings = null;
   let practiceFlashTimer = null;
   let voicePreviewInProgress = false;
   let wordSort = { key: "topic", direction: "asc" };
+  let syncSequence = 0;
 
-  function allWords() { return [...presetWords, ...customWords]; }
+  function normalizeSynonyms(value) {
+    const source = Array.isArray(value) ? value : [];
+    const seen = new Set();
+    const result = [];
+    for (const raw of source) {
+      const text = String(raw || "").trim();
+      const key = text.toLowerCase();
+      if (!text || seen.has(key)) continue;
+      seen.add(key);
+      result.push(text);
+    }
+    return result;
+  }
+
+  function normalizedWord(word) {
+    if (!word || typeof word !== "object") return word;
+    if (word.synonymGroup != null) word.synonymGroup = String(word.synonymGroup || "").trim();
+    return word;
+  }
+
+  function allWords() {
+    return [...presetWords, ...customWords].map(normalizedWord);
+  }
+
+  function wordForms(word) {
+    return word?.english ? [String(word.english).trim()] : [];
+  }
+
+  function wordSynonymGroupKey(word) {
+    if (!word) return "";
+    return presetSynonymGroupById.get(word.id) || String(word.synonymGroup || "").trim();
+  }
+
+  function synonymRelationKind(word) {
+    const group = wordSynonymGroupKey(word);
+    if (!group) return "";
+    return synonymGroupMeta.get(group)?.kind || String(word.synonymKind || "同義語・言い換え");
+  }
+
+  function linkedSynonymWords(word) {
+    const group = wordSynonymGroupKey(word);
+    if (!group) return [];
+    return allWords().filter(other => other.id !== word.id && wordSynonymGroupKey(other) === group);
+  }
+
+  function synonymFormsForDisplay(word) {
+    return linkedSynonymWords(word).map(other => other.english);
+  }
+
+  function hasSynonyms(word) {
+    return linkedSynonymWords(word).length > 0;
+  }
+
+  function antonymRelations(word) {
+    if (!word) return [];
+    return presetAntonymRelationsById.get(word.id) || [];
+  }
+
+  function linkedAntonymWords(word) {
+    const relations = antonymRelations(word);
+    if (!relations.length) return [];
+    const keys = new Set(relations.map(relation => relation.key));
+    const seen = new Set();
+    const result = [];
+    for (const other of allWords()) {
+      if (other.id === word.id) continue;
+      const otherRelations = antonymRelations(other);
+      if (!otherRelations.some(relation => keys.has(relation.key))) continue;
+      if (seen.has(other.id)) continue;
+      seen.add(other.id);
+      result.push(other);
+    }
+    return result;
+  }
+
+  function antonymFormsForDisplay(word) {
+    return linkedAntonymWords(word).map(other => other.english);
+  }
+
+  function antonymRelationKinds(word) {
+    return [...new Set(antonymRelations(word).map(relation => relation.kind).filter(Boolean))];
+  }
+
+  function hasAntonyms(word) {
+    return linkedAntonymWords(word).length > 0;
+  }
+
+  function normalizedJapanese(word) {
+    return String(word.japanese || "").trim().toLowerCase();
+  }
+
+  function wordConceptKey(word) {
+    const synonymGroup = wordSynonymGroupKey(word);
+    if (synonymGroup) return `syn:${synonymGroup}`;
+    const explicit = choiceGroupById.get(word.id);
+    return explicit || `ja:${normalizedJapanese(word)}`;
+  }
+
+  function wordsConflict(a, b) {
+    if (!a || !b) return false;
+    if (a.id === b.id) return true;
+    if (wordConceptKey(a) === wordConceptKey(b)) return true;
+    return String(a.english || "").trim().toLowerCase() === String(b.english || "").trim().toLowerCase();
+  }
+
+  function randomWordForm(word) {
+    return word.english;
+  }
+
+  function uniqueConceptCount(words) {
+    return new Set(words.map(wordConceptKey)).size;
+  }
+
+  function safeDistractorWords(target, pool, count = 3) {
+    const candidates = shuffle(pool.filter(word => !wordsConflict(target, word)));
+    const result = [];
+    const concepts = new Set([wordConceptKey(target)]);
+    for (const word of candidates) {
+      const key = wordConceptKey(word);
+      if (concepts.has(key)) continue;
+      concepts.add(key);
+      result.push(word);
+      if (result.length >= count) break;
+    }
+    return result;
+  }
+
+  function englishChoicesFor(target, targetForm, pool) {
+    const choices = [targetForm];
+    const seen = new Set([String(targetForm).toLowerCase()]);
+    for (const word of safeDistractorWords(target, pool, 3)) {
+      let forms = shuffle(wordForms(word));
+      const form = forms.find(value => !seen.has(value.toLowerCase()));
+      if (!form) continue;
+      choices.push(form);
+      seen.add(form.toLowerCase());
+    }
+    return shuffle(choices);
+  }
+
+  function japaneseChoicesFor(target, pool) {
+    const choices = [target.japanese];
+    const seen = new Set([normalizedJapanese(target)]);
+    for (const word of safeDistractorWords(target, pool, 3)) {
+      const key = normalizedJapanese(word);
+      if (!key || seen.has(key)) continue;
+      choices.push(word.japanese);
+      seen.add(key);
+    }
+    return shuffle(choices);
+  }
 
   function defaultWordProgress() {
     return {
@@ -683,42 +1203,34 @@
   }
 
   function updateWordProgress(id, isCorrect) {
+    const before = getWordProgress(id);
     const now = new Date().toISOString();
-    const progress = getWordProgress(id);
-    const wasReview = progress.review;
+    const source = currentSyncSource();
+    const entry = normalizeSyncWordEntry(source.words[id]);
 
-    progress.attempts += 1;
-    if (!progress.firstAttemptedAt) progress.firstAttemptedAt = now;
-    progress.lastAttemptedAt = now;
+    entry.attempts += 1;
+    if (isCorrect) entry.correct += 1;
+    else entry.wrong += 1;
+    if (!entry.firstAttemptedAt) entry.firstAttemptedAt = now;
+    entry.lastAttemptedAt = now;
+    entry.forms = {};
 
-    let reviewAdded = false;
-    let reviewCleared = false;
+    entry.recentAnswers.push({
+      id: uniqueSyncId("a"),
+      at: now,
+      correct: Boolean(isCorrect)
+    });
+    entry.recentAnswers = dedupeRecentAnswers(entry.recentAnswers).slice(-3);
+    source.words[id] = entry;
+    save(STORAGE.sync, syncState);
 
-    if (isCorrect) {
-      progress.correct += 1;
-      if (progress.review) {
-        progress.reviewCorrectStreak += 1;
-        if (progress.reviewCorrectStreak >= 2) {
-          progress.review = false;
-          progress.reviewCorrectStreak = 0;
-          reviewCleared = true;
-        }
-      } else {
-        progress.reviewCorrectStreak = 0;
-      }
-    } else {
-      progress.wrong += 1;
-      progress.review = true;
-      progress.reviewCorrectStreak = 0;
-      reviewAdded = !wasReview;
-    }
-
+    const progress = buildMergedWordProgress(id);
     saveWordProgress(id, progress);
 
     return {
       progress,
-      reviewAdded,
-      reviewCleared,
+      reviewAdded: !before.review && progress.review,
+      reviewCleared: before.review && !progress.review,
       reviewPending: progress.review && isCorrect
     };
   }
@@ -763,6 +1275,377 @@
     };
   }
 
+  function safeCount(value) {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  }
+
+  function generateDeviceId() {
+    const random = Math.random().toString(36).slice(2, 10);
+    return `d${Date.now()}_${random}`;
+  }
+
+  function uniqueSyncId(prefix) {
+    const device = syncState?.deviceId || "device";
+    syncSequence += 1;
+    return `${prefix}${Date.now()}_${String(syncSequence).padStart(6, "0")}_${device}_${Math.random().toString(36).slice(2, 7)}`;
+  }
+
+  function defaultSyncSource(createdAt = new Date().toISOString()) {
+    return {
+      createdAt,
+      sessions: {
+        completedSessions: 0,
+        perfectSessions: 0,
+        correct: { reading: 0, writing: 0, listening: 0 }
+      },
+      words: {}
+    };
+  }
+
+  function normalizeSyncSessions(value) {
+    const v = value || {};
+    return {
+      completedSessions: safeCount(v.completedSessions),
+      perfectSessions: safeCount(v.perfectSessions),
+      correct: {
+        reading: safeCount(v.correct?.reading),
+        writing: safeCount(v.correct?.writing),
+        listening: safeCount(v.correct?.listening)
+      }
+    };
+  }
+
+  function normalizeFormKey(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function normalizeSyncFormEntry(value) {
+    const v = value || {};
+    return {
+      attempts: safeCount(v.attempts),
+      correct: safeCount(v.correct),
+      wrong: safeCount(v.wrong),
+      firstAttemptedAt: typeof v.firstAttemptedAt === "string" ? v.firstAttemptedAt : "",
+      lastAttemptedAt: typeof v.lastAttemptedAt === "string" ? v.lastAttemptedAt : ""
+    };
+  }
+
+  function normalizeSyncWordEntry(value) {
+    const v = value || {};
+    const forms = {};
+    if (v.forms && typeof v.forms === "object" && !Array.isArray(v.forms)) {
+      for (const [form, raw] of Object.entries(v.forms)) {
+        const key = normalizeFormKey(form);
+        if (key) forms[key] = normalizeSyncFormEntry(raw);
+      }
+    }
+    return {
+      attempts: safeCount(v.attempts),
+      correct: safeCount(v.correct),
+      wrong: safeCount(v.wrong),
+      firstAttemptedAt: typeof v.firstAttemptedAt === "string" ? v.firstAttemptedAt : "",
+      lastAttemptedAt: typeof v.lastAttemptedAt === "string" ? v.lastAttemptedAt : "",
+      forms,
+      baseline: v.baseline && typeof v.baseline === "object" ? {
+        at: typeof v.baseline.at === "string" ? v.baseline.at : "",
+        review: Boolean(v.baseline.review),
+        reviewCorrectStreak: Math.min(1, safeCount(v.baseline.reviewCorrectStreak))
+      } : null,
+      recentAnswers: Array.isArray(v.recentAnswers) ? v.recentAnswers
+        .filter(x => x && typeof x.id === "string" && typeof x.at === "string")
+        .map(x => ({ id:x.id, at:x.at, correct:Boolean(x.correct) })) : []
+    };
+  }
+
+  function normalizeSyncSource(value) {
+    const v = value || {};
+    const words = {};
+    if (v.words && typeof v.words === "object" && !Array.isArray(v.words)) {
+      for (const [id, entry] of Object.entries(v.words)) words[id] = normalizeSyncWordEntry(entry);
+    }
+    return {
+      createdAt: typeof v.createdAt === "string" ? v.createdAt : new Date().toISOString(),
+      sessions: normalizeSyncSessions(v.sessions),
+      words
+    };
+  }
+
+  function generateCustomWordId(prefix = "c") {
+    return `${prefix}${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function legacyPresetSplitMappings() {
+    const mappings = [];
+    for (const definition of PRESET_SYNONYM_GROUP_DEFS) {
+      if (!definition.legacyAttached || definition.forms.length < 2) continue;
+      const parent = presetWordByEnglish.get(definition.forms[0].toLowerCase());
+      if (!parent) continue;
+      for (const form of definition.forms.slice(1)) {
+        const child = presetWordByEnglish.get(form.toLowerCase());
+        if (child) mappings.push({ parentId:parent.id, parentEnglish:parent.english, childId:child.id, form:child.english });
+      }
+    }
+    return mappings;
+  }
+
+  function migrateLegacyCustomSynonyms() {
+    const mappings = [];
+    const registered = new Map();
+    for (const word of [...presetWords, ...customWords]) {
+      if (word?.english) registered.set(String(word.english).trim().toLowerCase(), word);
+    }
+    const additions = [];
+
+    for (const word of customWords) {
+      const legacyForms = normalizeSynonyms(word?.synonyms);
+      if (!legacyForms.length) {
+        delete word.synonyms;
+        continue;
+      }
+      const group = String(word.synonymGroup || `custom-syn-${word.id}`).trim();
+      word.synonymGroup = group;
+      word.synonymKind = word.synonymKind || "同義語・言い換え";
+
+      legacyForms.forEach((form, index) => {
+        const key = form.toLowerCase();
+        let child = registered.get(key);
+        if (!child) {
+          let id = `${word.id}_syn${index + 1}`;
+          if (customWords.some(item => item.id === id) || additions.some(item => item.id === id)) id = generateCustomWordId("cs");
+          child = {
+            id,
+            english:form,
+            japanese:word.japanese,
+            topic:word.topic,
+            source:"custom",
+            synonymGroup:group,
+            synonymKind:word.synonymKind
+          };
+          additions.push(child);
+          registered.set(key, child);
+        } else if (child.source === "custom" && !child.synonymGroup) {
+          child.synonymGroup = group;
+          child.synonymKind = word.synonymKind;
+        }
+        mappings.push({ parentId:word.id, parentEnglish:word.english, childId:child.id, form });
+        if (disabledIds.has(word.id)) disabledIds.add(child.id);
+      });
+      delete word.synonyms;
+    }
+
+    if (additions.length) customWords.push(...additions);
+    return mappings;
+  }
+
+  function initializeSyncDataFromCurrentState() {
+    if (syncState && typeof syncState === "object" && !Array.isArray(syncState)
+        && syncState.sources && typeof syncState.sources === "object"
+        && typeof syncState.deviceId === "string") {
+      const normalized = {};
+      for (const [id, source] of Object.entries(syncState.sources)) normalized[id] = normalizeSyncSource(source);
+      syncState = {
+        schemaVersion: Number(syncState.schemaVersion) || 1,
+        deviceId: syncState.deviceId,
+        sources: normalized
+      };
+      if (!syncState.sources[syncState.deviceId]) syncState.sources[syncState.deviceId] = defaultSyncSource();
+      save(STORAGE.sync, syncState);
+      return;
+    }
+
+    const deviceId = generateDeviceId();
+    const capturedAt = new Date().toISOString();
+    const source = defaultSyncSource(capturedAt);
+    source.sessions = normalizeSyncSessions(learningStats);
+
+    for (const [id, raw] of Object.entries(wordProgress || {})) {
+      const progress = { ...defaultWordProgress(), ...(raw || {}) };
+      if (safeCount(progress.attempts) === 0) continue;
+      source.words[id] = {
+        attempts: safeCount(progress.attempts),
+        correct: safeCount(progress.correct),
+        wrong: safeCount(progress.wrong),
+        firstAttemptedAt: progress.firstAttemptedAt || "",
+        lastAttemptedAt: progress.lastAttemptedAt || "",
+        forms: {},
+        baseline: {
+          at: progress.lastAttemptedAt || progress.firstAttemptedAt || capturedAt,
+          review: Boolean(progress.review),
+          reviewCorrectStreak: Math.min(1, safeCount(progress.reviewCorrectStreak))
+        },
+        recentAnswers: []
+      };
+    }
+
+    syncState = { schemaVersion: DATA_SCHEMA_VERSION, deviceId, sources: { [deviceId]: source } };
+    save(STORAGE.sync, syncState);
+  }
+
+  function currentSyncSource() {
+    if (!syncState || typeof syncState !== "object" || !syncState.deviceId) {
+      initializeSyncDataFromCurrentState();
+    }
+    if (!syncState.sources[syncState.deviceId]) syncState.sources[syncState.deviceId] = defaultSyncSource();
+    return syncState.sources[syncState.deviceId];
+  }
+
+  function splitLegacyEntriesInSource(source, mappings) {
+    const byParent = new Map();
+    for (const mapping of mappings) {
+      if (!byParent.has(mapping.parentId)) byParent.set(mapping.parentId, []);
+      byParent.get(mapping.parentId).push(mapping);
+    }
+
+    for (const [parentId, children] of byParent.entries()) {
+      if (!source.words?.[parentId]) continue;
+      const original = normalizeSyncWordEntry(source.words[parentId]);
+      const parentEnglish = children[0]?.parentEnglish || "";
+      const canonical = normalizeSyncFormEntry(original.forms[normalizeFormKey(parentEnglish)]);
+      const tracked = Object.values(original.forms).map(normalizeSyncFormEntry);
+      const trackedAttempts = tracked.reduce((sum, item) => sum + item.attempts, 0);
+      const trackedCorrect = tracked.reduce((sum, item) => sum + item.correct, 0);
+      const trackedWrong = tracked.reduce((sum, item) => sum + item.wrong, 0);
+      const legacyAttempts = Math.max(0, original.attempts - trackedAttempts);
+      const legacyCorrect = Math.max(0, original.correct - trackedCorrect);
+      const legacyWrong = Math.max(0, original.wrong - trackedWrong);
+
+      source.words[parentId] = {
+        ...original,
+        attempts: legacyAttempts + canonical.attempts,
+        correct: legacyCorrect + canonical.correct,
+        wrong: legacyWrong + canonical.wrong,
+        forms: {}
+      };
+
+      for (const child of children) {
+        const formEntry = normalizeSyncFormEntry(original.forms[normalizeFormKey(child.form)]);
+        if (!formEntry.attempts) continue;
+        const childEntry = {
+          attempts: formEntry.attempts,
+          correct: formEntry.correct,
+          wrong: formEntry.wrong,
+          firstAttemptedAt: formEntry.firstAttemptedAt,
+          lastAttemptedAt: formEntry.lastAttemptedAt,
+          forms: {},
+          baseline: null,
+          recentAnswers: []
+        };
+        source.words[child.childId] = source.words[child.childId]
+          ? mergeSameSourceWord(source.words[child.childId], childEntry)
+          : childEntry;
+      }
+    }
+    return source;
+  }
+
+  function migrateLegacySyncToIndependentWords(mappings) {
+    if (!syncState || (Number(syncState.schemaVersion) || 1) >= DATA_SCHEMA_VERSION) return;
+    for (const source of Object.values(syncState.sources || {})) splitLegacyEntriesInSource(source, mappings);
+    for (const mapping of mappings) {
+      if (disabledIds.has(mapping.parentId)) disabledIds.add(mapping.childId);
+    }
+    syncState.schemaVersion = DATA_SCHEMA_VERSION;
+    save(STORAGE.sync, syncState);
+    save(STORAGE.disabled, [...disabledIds]);
+  }
+
+  function dedupeRecentAnswers(items) {
+    const map = new Map();
+    for (const item of items || []) {
+      if (!item || typeof item.id !== "string" || typeof item.at !== "string") continue;
+      if (!map.has(item.id)) map.set(item.id, { id:item.id, at:item.at, correct:Boolean(item.correct) });
+    }
+    return [...map.values()].sort((a,b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
+  }
+
+  function applyReviewAnswer(state, isCorrect) {
+    if (isCorrect) {
+      if (state.review) {
+        state.reviewCorrectStreak += 1;
+        if (state.reviewCorrectStreak >= 2) {
+          state.review = false;
+          state.reviewCorrectStreak = 0;
+        }
+      } else {
+        state.reviewCorrectStreak = 0;
+      }
+    } else {
+      state.review = true;
+      state.reviewCorrectStreak = 0;
+    }
+  }
+
+  function buildMergedWordProgress(id) {
+    const result = defaultWordProgress();
+    let latestBaseline = null;
+    let recent = [];
+
+    for (const source of Object.values(syncState?.sources || {})) {
+      const entry = source?.words?.[id];
+      if (!entry) continue;
+      const normalized = normalizeSyncWordEntry(entry);
+      result.attempts += normalized.attempts;
+      result.correct += normalized.correct;
+      result.wrong += normalized.wrong;
+      if (normalized.firstAttemptedAt && (!result.firstAttemptedAt || normalized.firstAttemptedAt < result.firstAttemptedAt)) {
+        result.firstAttemptedAt = normalized.firstAttemptedAt;
+      }
+      if (normalized.lastAttemptedAt && (!result.lastAttemptedAt || normalized.lastAttemptedAt > result.lastAttemptedAt)) {
+        result.lastAttemptedAt = normalized.lastAttemptedAt;
+      }
+      if (normalized.baseline?.at && (!latestBaseline || normalized.baseline.at > latestBaseline.at)) {
+        latestBaseline = normalized.baseline;
+      }
+      recent.push(...normalized.recentAnswers);
+    }
+
+    const state = {
+      review: Boolean(latestBaseline?.review),
+      reviewCorrectStreak: Math.min(1, safeCount(latestBaseline?.reviewCorrectStreak))
+    };
+    const baselineAt = latestBaseline?.at || "";
+    recent = dedupeRecentAnswers(recent);
+    for (const event of recent) {
+      if (baselineAt && event.at <= baselineAt) continue;
+      applyReviewAnswer(state, event.correct);
+    }
+    result.review = state.review;
+    result.reviewCorrectStreak = state.reviewCorrectStreak;
+    return result;
+  }
+
+  function rebuildWordProgressFromSync() {
+    const ids = new Set();
+    for (const source of Object.values(syncState?.sources || {})) {
+      Object.keys(source?.words || {}).forEach(id => ids.add(id));
+    }
+    wordProgress = {};
+    ids.forEach(id => {
+      const progress = buildMergedWordProgress(id);
+      if (progress.attempts > 0) wordProgress[id] = progress;
+    });
+    save(STORAGE.wordProgress, wordProgress);
+  }
+
+  function rebuildLearningStatsFromSync() {
+    const next = defaultLearningStats();
+    next.migratedFromHistory = true;
+    for (const source of Object.values(syncState?.sources || {})) {
+      const sessions = normalizeSyncSessions(source?.sessions);
+      next.completedSessions += sessions.completedSessions;
+      next.perfectSessions += sessions.perfectSessions;
+      for (const mode of ["reading","writing","listening"]) next.correct[mode] += sessions.correct[mode];
+    }
+    learningStats = next;
+    save(STORAGE.learningStats, learningStats);
+  }
+
+  function rebuildLearningCachesFromSync() {
+    rebuildWordProgressFromSync();
+    rebuildLearningStatsFromSync();
+  }
+
   function initializeLearningData() {
     if (!wordProgress || typeof wordProgress !== "object" || Array.isArray(wordProgress)) {
       wordProgress = {};
@@ -799,6 +1682,15 @@
       save(STORAGE.learningStats, learningStats);
     }
 
+    const legacyCustomMappings = migrateLegacyCustomSynonyms();
+    if (legacyCustomMappings.length) save(STORAGE.custom, customWords);
+
+    initializeSyncDataFromCurrentState();
+    migrateLegacySyncToIndependentWords([
+      ...legacyPresetSplitMappings(),
+      ...legacyCustomMappings
+    ]);
+    rebuildLearningCachesFromSync();
     evaluateAchievements(false);
   }
 
@@ -842,6 +1734,41 @@
     ];
   }
 
+  function synonymAchievementProgress() {
+    const words = allWords().filter(hasSynonyms);
+    const attemptedWords = words.filter(word => !isUntriedWord(word)).length;
+    const reviewWords = words.filter(isReviewTarget).length;
+    const groups = new Set(words.map(wordSynonymGroupKey).filter(Boolean));
+
+    return {
+      totalWords: words.length,
+      attemptedWords,
+      reviewWords,
+      totalGroups: groups.size,
+      complete: words.length > 0
+        && attemptedWords === words.length
+        && reviewWords === 0
+    };
+  }
+
+  function antonymAchievementProgress() {
+    const words = allWords().filter(hasAntonyms);
+    const attemptedWords = words.filter(word => !isUntriedWord(word)).length;
+    const reviewWords = words.filter(isReviewTarget).length;
+    const groups = new Set();
+    words.forEach(word => antonymRelations(word).forEach(relation => groups.add(relation.key)));
+
+    return {
+      totalWords: words.length,
+      attemptedWords,
+      reviewWords,
+      totalGroups: groups.size,
+      complete: words.length > 0
+        && attemptedWords === words.length
+        && reviewWords === 0
+    };
+  }
+
   function secretAchievementProgress() {
     const words = allWords();
     const attempted = words.filter(word => !isUntriedWord(word)).length;
@@ -877,6 +1804,28 @@
       });
     }
 
+    const synonymSecret = synonymAchievementProgress();
+    if (synonymSecret.complete && !achievements.secret_synonym_master) {
+      achievements.secret_synonym_master = now;
+      newlyUnlocked.push({
+        id: "secret_synonym_master",
+        title: "同義語マスター",
+        tier: { material:"blue", size:"large", label:"シークレット" },
+        secret: true
+      });
+    }
+
+    const antonymSecret = antonymAchievementProgress();
+    if (antonymSecret.complete && !achievements.secret_antonym_master) {
+      achievements.secret_antonym_master = now;
+      newlyUnlocked.push({
+        id: "secret_antonym_master",
+        title: "対義語マスター",
+        tier: { material:"coral", size:"large", label:"シークレット" },
+        secret: true
+      });
+    }
+
     const secret = secretAchievementProgress();
     if (secret.complete && !achievements.secret_all_clear) {
       achievements.secret_all_clear = now;
@@ -896,14 +1845,15 @@
   }
 
   function updateLearningStatsFromQuiz(percent) {
-    learningStats.completedSessions += 1;
-    if (percent === 100) learningStats.perfectSessions += 1;
-
+    const source = currentSyncSource();
+    source.sessions = normalizeSyncSessions(source.sessions);
+    source.sessions.completedSessions += 1;
+    if (percent === 100) source.sessions.perfectSessions += 1;
     for (const mode of ["reading","writing","listening"]) {
-      learningStats.correct[mode] += Number(quiz.detail[mode]?.[0] || 0);
+      source.sessions.correct[mode] += Number(quiz.detail[mode]?.[0] || 0);
     }
-
-    save(STORAGE.learningStats, learningStats);
+    save(STORAGE.sync, syncState);
+    rebuildLearningStatsFromSync();
   }
 
   function badgeVisual(tier, locked = false) {
@@ -917,8 +1867,27 @@
     return `<span class="${classes}" aria-hidden="true"></span>`;
   }
 
+  function synonymSecretBadgeVisual(locked = false) {
+    return `
+      <span class="secret-double-badge" aria-hidden="true">
+        ${badgeVisual({ material:"blue", size:"large", label:"シークレット" }, locked)}
+        ${badgeVisual({ material:"blue-deep", size:"large", label:"シークレット" }, locked)}
+      </span>
+    `;
+  }
+
+  function antonymSecretBadgeVisual(locked = false) {
+    return `
+      <span class="secret-double-badge secret-opposite-badge" aria-hidden="true">
+        ${badgeVisual({ material:"coral", size:"large", label:"シークレット" }, locked)}
+        ${badgeVisual({ material:"teal", size:"large", label:"シークレット" }, locked)}
+      </span>
+    `;
+  }
+
   function renderBadges() {
     const summary = $("#achievementSummary");
+    const headerProgress = $("#achievementHeaderProgress");
     const seriesArea = $("#achievementSeries");
     const secretArea = $("#secretAchievement");
     if (!summary || !seriesArea || !secretArea) return;
@@ -933,11 +1902,19 @@
         validAchievementIds.add(`${series.key}_${threshold}`);
       });
     }
+    validAchievementIds.add("secret_synonym_master");
+    validAchievementIds.add("secret_antonym_master");
     validAchievementIds.add("secret_all_clear");
 
     const unlockedCount = Object.keys(achievements)
       .filter(id => validAchievementIds.has(id))
       .length;
+    const totalBadgeCount = validAchievementIds.size;
+
+    if (headerProgress) {
+      headerProgress.innerHTML = `<span>獲得バッジ</span><strong>${unlockedCount}/${totalBadgeCount}</strong>`;
+      headerProgress.setAttribute("aria-label", `獲得バッジ ${unlockedCount}/${totalBadgeCount}`);
+    }
 
     summary.innerHTML = [
       [learningStats.completedSessions, "練習完了回数"],
@@ -946,8 +1923,7 @@
       [learningStats.correct.writing, "書き・累計正解"],
       [learningStats.correct.listening, "リスニング・累計正解"],
       [`${attempted}/${words.length}`, "挑戦済み単語"],
-      [review, "復習対象単語"],
-      [`${unlockedCount}/56`, "獲得バッジ"]
+      [review, "復習対象単語"]
     ].map(([value, label]) => `
       <div class="achievement-summary-item">
         <strong>${escapeHtml(value)}</strong>
@@ -966,7 +1942,7 @@
         const id = `${series.key}_${threshold}`;
         const unlockedAt = achievements[id];
         const tier = BADGE_TIERS[index];
-        const [messageJa, messageEn] = BADGE_MESSAGES[index];
+        const [messageJa, messageEn] = BADGE_MESSAGES[series.key][index];
         const progressText = unlockedAt
           ? `獲得：${formatDate(unlockedAt)}`
           : `${Math.min(current, threshold)} / ${threshold}`;
@@ -977,8 +1953,10 @@
             <div class="badge-info">
               <strong>${escapeHtml(series.short)} ${threshold}</strong>
               <span class="badge-condition">${escapeHtml(series.condition(threshold))}</span>
-              <span class="badge-message-ja">${escapeHtml(messageJa)}</span>
-              <span class="badge-message-en">${escapeHtml(messageEn)}</span>
+              ${unlockedAt ? `
+                <span class="badge-message-ja">${escapeHtml(messageJa)}</span>
+                <span class="badge-message-en">${escapeHtml(messageEn)}</span>
+              ` : ""}
               <span class="badge-progress">${escapeHtml(tier.label)}・${escapeHtml(progressText)}</span>
             </div>
           </div>
@@ -1005,31 +1983,92 @@
       `;
     }).join("");
 
+    const synonymSecret = synonymAchievementProgress();
+    const synonymSecretUnlocked = achievements.secret_synonym_master;
+    const antonymSecret = antonymAchievementProgress();
+    const antonymSecretUnlocked = achievements.secret_antonym_master;
     const secret = secretAchievementProgress();
     const secretUnlocked = achievements.secret_all_clear;
 
+    const secretUnlockedCount = [synonymSecretUnlocked, antonymSecretUnlocked, secretUnlocked].filter(Boolean).length;
     secretArea.innerHTML = `
-      <div class="secret-badge-layout">
-        ${badgeVisual(
-          { material:"rainbow", size:"large", label:"シークレット" },
-          !secretUnlocked
-        )}
-        <div>
-          <h3>${secretUnlocked ? "オールクリア獲得！" : "？？？ オールクリア"}</h3>
-          <p class="secret-condition">
-            現在登録されている全単語に1回以上挑戦し、復習対象を0件にすると解禁します。
-          </p>
-          <strong>${secretUnlocked ? "全部に出会って、苦手もゼロ！すごい！" : "全単語との出会いと、苦手ゼロを目指そう！"}</strong>
-          <span class="badge-message-en">
-            ${secretUnlocked ? "You cleared every word!" : "Meet every word and clear your review list!"}
-          </span>
-          <div class="secret-progress-grid">
-            <span>挑戦済み ${secret.attempted} / ${secret.total}</span>
-            <span>復習対象 ${secret.review}件</span>
-            ${secretUnlocked ? `<span>獲得：${escapeHtml(formatDate(secretUnlocked))}</span>` : ""}
+      <details class="achievement-series-card secret-achievement-card">
+        <summary>
+          <div class="achievement-series-title">
+            <strong>シークレット実績</strong>
+            <span>獲得 ${secretUnlockedCount} / 3</span>
+          </div>
+        </summary>
+        <div class="achievement-series-body secret-achievement-stack">
+          <div class="secret-achievement-entry">
+            <div class="secret-badge-layout">
+              ${synonymSecretBadgeVisual(!synonymSecretUnlocked)}
+              <div>
+                <h3>${synonymSecretUnlocked ? "同義語マスター獲得！" : "？？？"}</h3>
+                <p class="secret-condition">
+                  同義語・言い換えの関係を持つ単語をすべて1回以上挑戦し、その対象の復習をすべて完了すると解禁します。
+                </p>
+                ${synonymSecretUnlocked ? `
+                  <strong>いろいろな言い方を知って、使い分けへの一歩を進めたね！</strong>
+                  <span class="badge-message-en">You mastered the synonym set!</span>
+                ` : ""}
+                <div class="secret-progress-grid">
+                  <span>対象単語 ${synonymSecret.attemptedWords} / ${synonymSecret.totalWords}</span>
+                  <span>同義語グループ ${synonymSecret.totalGroups}組</span>
+                  <span>復習対象 ${synonymSecret.reviewWords}件</span>
+                  ${synonymSecretUnlocked ? `<span>獲得：${escapeHtml(formatDate(synonymSecretUnlocked))}</span>` : ""}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="secret-achievement-entry">
+            <div class="secret-badge-layout">
+              ${antonymSecretBadgeVisual(!antonymSecretUnlocked)}
+              <div>
+                <h3>${antonymSecretUnlocked ? "対義語マスター獲得！" : "？？？"}</h3>
+                <p class="secret-condition">
+                  対義語・対になる表現を持つ単語をすべて1回以上挑戦し、その対象の復習をすべて完了すると解禁します。
+                </p>
+                ${antonymSecretUnlocked ? `
+                  <strong>反対の意味や対になる動きを、つながりで覚えられたね！</strong>
+                  <span class="badge-message-en">You mastered the opposite-word set!</span>
+                ` : ""}
+                <div class="secret-progress-grid">
+                  <span>対象単語 ${antonymSecret.attemptedWords} / ${antonymSecret.totalWords}</span>
+                  <span>対義語・対の組 ${antonymSecret.totalGroups}組</span>
+                  <span>復習対象 ${antonymSecret.reviewWords}件</span>
+                  ${antonymSecretUnlocked ? `<span>獲得：${escapeHtml(formatDate(antonymSecretUnlocked))}</span>` : ""}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="secret-achievement-entry">
+            <div class="secret-badge-layout">
+              ${badgeVisual(
+                { material:"rainbow", size:"large", label:"シークレット" },
+                !secretUnlocked
+              )}
+              <div>
+                <h3>${secretUnlocked ? "オールクリア獲得！" : "？？？"}</h3>
+                <p class="secret-condition">
+                  現在登録されている全単語に1回以上挑戦し、復習対象を0件にすると解禁します。
+                </p>
+                ${secretUnlocked ? `
+                  <strong>全部に出会って、苦手もゼロ！すごい！</strong>
+                  <span class="badge-message-en">You cleared every word!</span>
+                ` : ""}
+                <div class="secret-progress-grid">
+                  <span>挑戦済み ${secret.attempted} / ${secret.total}</span>
+                  <span>復習対象 ${secret.review}件</span>
+                  ${secretUnlocked ? `<span>獲得：${escapeHtml(formatDate(secretUnlocked))}</span>` : ""}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </details>
     `;
   }
 
@@ -1254,6 +2293,23 @@
       selectPreferredEnglishVoice(voices);
   }
 
+  function practiceStartButtons() {
+    return $$(".practice-start-button");
+  }
+
+  function setPracticeStartDisabled(disabled) {
+    practiceStartButtons().forEach(button => { button.disabled = disabled; });
+  }
+
+  function setPracticeStartLabel(label) {
+    practiceStartButtons().forEach(button => { button.textContent = label; });
+  }
+
+  function practiceStartDisabled() {
+    const buttons = practiceStartButtons();
+    return buttons.length > 0 && buttons.every(button => button.disabled);
+  }
+
   function initVoiceSettings() {
     const select = $("#voiceSelect");
     const preview = $("#previewVoice");
@@ -1276,7 +2332,7 @@
       voicePreviewInProgress = true;
       preview.disabled = true;
       preview.textContent = "確認中...";
-      $("#startPractice").disabled = true;
+      setPracticeStartDisabled(true);
       status.classList.remove("warning-text", "success-text");
       status.textContent = "選択した音声を短く再生して確認しています。";
 
@@ -1519,12 +2575,14 @@
     $$('input[name="topic"]').forEach(input => input.checked = true);
     const normalMode = $('input[name="studyMode"][value="normal"]');
     if (normalMode) normalMode.checked = true;
+    if ($("#synonymPriority")) $("#synonymPriority").checked = false;
+    if ($("#antonymPriority")) $("#antonymPriority").checked = false;
     $("#questionCount").value = "20";
     updatePracticeAvailability();
   }
 
   function initPracticeSettings() {
-    $$('input[name="mode"],input[name="writingLevel"],input[name="source"],input[name="studyMode"]').forEach(x => x.addEventListener("change", updatePracticeAvailability));
+    $$('input[name="mode"],input[name="writingLevel"],input[name="source"],input[name="studyMode"],#synonymPriority,#antonymPriority').forEach(x => x.addEventListener("change", updatePracticeAvailability));
     $("#questionCount").addEventListener("change", updatePracticeAvailability);
     $("#checkAllTopics").addEventListener("click", () => { $$('input[name="topic"]').forEach(x=>x.checked=true); updatePracticeAvailability(); });
     $("#uncheckAllTopics").addEventListener("click", () => { $$('input[name="topic"]').forEach(x=>x.checked=false); updatePracticeAvailability(); });
@@ -1532,9 +2590,11 @@
     $("#startRecommendedHome").addEventListener("click", () => {
       applyRecommendedSettings();
       showScreen("practice");
-      if (!$("#startPractice").disabled) startPractice(null, { trigger: "recommended" });
+      if (!practiceStartDisabled()) startPractice(null, { trigger: "recommended" });
     });
-    $("#startPractice").addEventListener("click", () => startPractice(null, { trigger: "settings" }));
+    practiceStartButtons().forEach(button => {
+      button.addEventListener("click", () => startPractice(null, { trigger: "settings" }));
+    });
     $("#nextQuestion").addEventListener("click", nextQuestion);
     $("#quitQuiz").addEventListener("click", () => {
       if (confirm("練習を中断しますか？現在の結果は保存されません。")) showSetup();
@@ -1551,6 +2611,8 @@
       sources: $$('input[name="source"]:checked').map(x=>x.value),
       topics: $$('input[name="topic"]:checked').map(x=>x.value),
       studyMode: $('input[name="studyMode"]:checked')?.value || "normal",
+      synonymPriority: Boolean($("#synonymPriority")?.checked),
+      antonymPriority: Boolean($("#antonymPriority")?.checked),
       count: Number($("#questionCount").value)
     };
   }
@@ -1575,28 +2637,37 @@
     return basePool;
   }
 
-  function buildWordSequence(targetPool, count, allowRepeat = true) {
+  function buildWordSequence(targetPool, count, allowRepeat = true, priorities = {}) {
     if (!targetPool.length || count <= 0) return [];
 
-    if (!allowRepeat) {
-      return shuffle(targetPool).slice(0, count);
-    }
+    const synonymPriority = Boolean(priorities.synonymPriority);
+    const antonymPriority = Boolean(priorities.antonymPriority);
+
+    const buildDeck = () => {
+      if (!synonymPriority && !antonymPriority) return shuffle(targetPool);
+
+      const priorityWords = shuffle(targetPool.filter(word =>
+        (synonymPriority && hasSynonyms(word)) ||
+        (antonymPriority && hasAntonyms(word))
+      ));
+      const otherWords = shuffle(targetPool.filter(word =>
+        !((synonymPriority && hasSynonyms(word)) ||
+          (antonymPriority && hasAntonyms(word)))
+      ));
+      return [...priorityWords, ...otherWords];
+    };
+
+    if (!allowRepeat) return buildDeck().slice(0, count);
 
     const result = [];
     let previousId = "";
 
     while (result.length < count) {
-      let deck = shuffle(targetPool);
+      const deck = buildDeck();
 
-      if (
-        deck.length > 1
-        && previousId
-        && deck[0].id === previousId
-      ) {
+      if (deck.length > 1 && previousId && deck[0].id === previousId) {
         const swapIndex = deck.findIndex(word => word.id !== previousId);
-        if (swapIndex > 0) {
-          [deck[0], deck[swapIndex]] = [deck[swapIndex], deck[0]];
-        }
+        if (swapIndex > 0) [deck[0], deck[swapIndex]] = [deck[swapIndex], deck[0]];
       }
 
       for (const word of deck) {
@@ -1629,8 +2700,8 @@
     }
     if (!settings.sources.length) issues.push("出題元を選択してください。");
     if (!settings.topics.length) issues.push("カテゴリを選択してください。");
-    if (basePool.length < 4) {
-      issues.push("条件に合う出題対象単語が4件以上必要です。");
+    if (uniqueConceptCount(basePool) < 4) {
+      issues.push("条件に合う意味の異なる出題対象単語が4件以上必要です。");
     }
     if (settings.studyMode === "review" && !targets.length) {
       issues.push("現在の条件に復習対象の単語はありません。");
@@ -1643,36 +2714,52 @@
     }
 
     let status = "";
+    const synonymTargetCount = targets.filter(hasSynonyms).length;
+    const antonymTargetCount = targets.filter(hasAntonyms).length;
     if (settings.studyMode === "review") {
       status = `復習対象：${targets.length}件／選択条件の単語：${basePool.length}件`;
     } else if (settings.studyMode === "untried") {
       status = `未挑戦：${targets.length}件／選択条件の単語：${basePool.length}件`;
-      if (targets.length > 0 && targets.length < settings.count) {
-        status += `（今回は${targets.length}問）`;
-      }
+      if (targets.length > 0 && targets.length < settings.count) status += `（今回は${targets.length}問）`;
     } else {
       status = `条件に合う単語：${basePool.length}件（全単語を一巡するまで重複を抑制）`;
     }
+    if (settings.synonymPriority && targets.length) {
+      status += `／同義語・言い換え優先：${synonymTargetCount}件`;
+    }
+    if (settings.antonymPriority && targets.length) {
+      status += `／対義語・対になる語優先：${antonymTargetCount}件`;
+    }
+    if ((settings.synonymPriority || settings.antonymPriority) && targets.length) {
+      status += "（不足分はその他の対象単語から出題）";
+    }
 
     $("#practiceAvailability").textContent = issues.length ? issues[0] : status;
-    $("#startPractice").disabled = issues.length > 0 || voicePreviewInProgress;
+    setPracticeStartDisabled(issues.length > 0 || voicePreviewInProgress);
   }
 
   function buildQuestion(word, mode, settings, pool) {
+    const targetEnglish = randomWordForm(word);
     if (mode === "reading") {
-      return { word, mode, prompt:word.english, correct:word.japanese,
-        choices:shuffle([word.japanese,...sample(pool.filter(x=>x.id!==word.id),3).map(x=>x.japanese)]) };
+      return {
+        word, mode, targetEnglish, prompt:targetEnglish, correct:word.japanese,
+        choices:japaneseChoicesFor(word, pool)
+      };
     }
     if (mode === "listening") {
-      return { word, mode, prompt:word.english, correct:word.english,
-        choices:shuffle([word.english,...sample(pool.filter(x=>x.id!==word.id),3).map(x=>x.english)]) };
+      return {
+        word, mode, targetEnglish, prompt:targetEnglish, correct:targetEnglish,
+        choices:englishChoicesFor(word, targetEnglish, pool)
+      };
     }
     const level = settings.writingLevels[Math.floor(Math.random()*settings.writingLevels.length)];
-    if (level === "word" || word.english.replace(/[^a-z]/gi,"").length < 3) {
-      return { word, mode, level:"word", prompt:word.japanese, correct:word.english,
-        choices:shuffle([word.english,...sample(pool.filter(x=>x.id!==word.id),3).map(x=>x.english)]) };
+    if (level === "word" || targetEnglish.replace(/[^a-z]/gi,"").length < 3) {
+      return {
+        word, mode, level:"word", targetEnglish, prompt:word.japanese, correct:targetEnglish,
+        choices:englishChoicesFor(word, targetEnglish, pool)
+      };
     }
-    const letters = [...word.english];
+    const letters = [...targetEnglish];
     const validStarts = letters.map((c,i)=>/[a-z]/i.test(c) ? i : -1).filter(i=>i>=0);
     let start = validStarts[Math.floor(Math.random()*validStarts.length)];
     let len = level === "two" ? 2 : 1;
@@ -1689,8 +2776,10 @@
       if(d.toLowerCase()!==missing.toLowerCase()) distractors.add(d);
     }
     const display=letters.map((c,i)=>(i>=start&&i<start+len)?"_":c).join("");
-    return { word, mode, level:len===1?"one":"two", prompt:word.japanese, display, correct:missing,
-      choices:shuffle([missing,...distractors]) };
+    return {
+      word, mode, level:len===1?"one":"two", targetEnglish, prompt:word.japanese, display, correct:missing,
+      choices:shuffle([missing,...distractors])
+    };
   }
 
   async function startPractice(forcedSettings=null, options={}) {
@@ -1702,19 +2791,18 @@
       : getSettings();
     const settings = JSON.parse(JSON.stringify(originalSettings));
 
-    const startButton = $("#startPractice");
-    const originalLabel = startButton.textContent;
+    const originalLabel = "練習開始";
 
     if (settings.modes.includes("listening")) {
-      startButton.disabled = true;
-      startButton.textContent = "音声を確認中...";
+      setPracticeStartDisabled(true);
+      setPracticeStartLabel("音声を確認中...");
       $("#practiceAvailability").classList.remove("warning-text");
       $("#practiceAvailability").textContent =
         "選択した音声を短く再生して、リスニングを利用できるか確認しています。";
 
       const playback = await checkSelectedVoicePlayback();
 
-      startButton.textContent = originalLabel;
+      setPracticeStartLabel(originalLabel);
 
       if (!playback.ok) {
         const listeningCheckbox = $('input[name="mode"][value="listening"]');
@@ -1752,17 +2840,17 @@
     const pool = eligibleWords(settings);
     const targets = targetWords(settings, pool);
 
-    if (pool.length < 4) {
-      startButton.textContent = originalLabel;
+    if (uniqueConceptCount(pool) < 4) {
+      setPracticeStartLabel(originalLabel);
       updatePracticeAvailability();
       focusPracticeSettings(
-        "現在の設定では、条件に合う出題対象単語が4件未満です。出題元またはカテゴリを見直してください。"
+        "現在の設定では、意味の異なる出題対象単語が4件未満です。出題元またはカテゴリを見直してください。"
       );
       return;
     }
 
     if (!targets.length) {
-      startButton.textContent = originalLabel;
+      setPracticeStartLabel(originalLabel);
       updatePracticeAvailability();
       focusPracticeSettings(
         settings.studyMode === "review"
@@ -1781,7 +2869,8 @@
     const wordSequence = buildWordSequence(
       targets,
       actualCount,
-      settings.studyMode !== "untried"
+      settings.studyMode !== "untried",
+      { synonymPriority: settings.synonymPriority, antonymPriority: settings.antonymPriority }
     );
 
     for (let i = 0; i < wordSequence.length; i++) {
@@ -1800,8 +2889,8 @@
       answers: []
     };
 
-    startButton.textContent = originalLabel;
-    startButton.disabled = false;
+    setPracticeStartLabel(originalLabel);
+    setPracticeStartDisabled(false);
     $("#practiceSetup").classList.add("hidden");
     $("#resultArea").classList.add("hidden");
     $("#quizArea").classList.remove("hidden");
@@ -1815,9 +2904,13 @@
     const studyLabels={normal:"",review:"復習モード",untried:"未挑戦モード"};
     $("#quizModeBadge").textContent=labels[q.mode];
     const studyBadge=$("#quizStudyModeBadge");
+    const studyParts=[];
     const studyLabel=studyLabels[quiz.settings.studyMode]||"";
-    studyBadge.textContent=studyLabel;
-    studyBadge.classList.toggle("hidden",!studyLabel);
+    if (studyLabel) studyParts.push(studyLabel);
+    if (quiz.settings.synonymPriority) studyParts.push("同義語優先");
+    if (quiz.settings.antonymPriority) studyParts.push("対義語優先");
+    studyBadge.textContent=studyParts.join("・");
+    studyBadge.classList.toggle("hidden",studyParts.length===0);
     $("#quizProgress").textContent=`${quiz.index+1} / ${quiz.questions.length}`;
     $("#quizCorrect").textContent=quiz.correct;
     $("#progressBar").style.width=`${(quiz.index/quiz.questions.length)*100}%`;
@@ -1858,8 +2951,11 @@
       level: q.level || "",
       prompt: q.prompt,
       display: q.display || "",
-      wordEnglish: q.word.english,
+      wordId: q.word.id,
+      wordEnglish: q.targetEnglish || q.word.english,
+      baseWordEnglish: q.word.english,
       wordJapanese: q.word.japanese,
+      answeredAt: new Date().toISOString(),
       selectedAnswer: String(choice),
       correctAnswer: String(q.correct),
       isCorrect: correct
@@ -1877,18 +2973,32 @@
     if(!correct) button.classList.add("wrong");
     $("#quizCorrect").textContent=quiz.correct;
 
+    const synonymForms = synonymFormsForDisplay(q.word);
+    const synonymNote = synonymForms.length
+      ? `　${synonymRelationKind(q.word) || "同義語・言い換え"}：${[q.word.english, ...synonymForms].join(" / ")}`
+      : "";
+    const antonymForms = antonymFormsForDisplay(q.word);
+    const antonymNote = antonymForms.length
+      ? `　対になる語：${antonymForms.join(" / ")}`
+      : "";
+    const relationNote = synonymNote + antonymNote;
+    const listeningMeaning = correct && q.mode === "listening"
+      ? `　${q.targetEnglish || q.word.english}：${q.word.japanese}`
+      : "";
     let feedbackText = "";
     if (!correct) {
-      feedbackText = `正解：${q.correct}（${q.word.english}：${q.word.japanese}）`;
+      const completedWord = q.targetEnglish || q.word.english;
+      feedbackText = `正解：${q.correct}（${completedWord}：${q.word.japanese}）`;
       feedbackText += progressUpdate.reviewAdded
         ? "　復習対象に追加しました。"
         : "　復習対象のままです。";
+      feedbackText += relationNote;
     } else if (progressUpdate.reviewCleared) {
-      feedbackText = "正解です！ 2回連続正解で復習完了。復習対象から外れました。";
+      feedbackText = "正解です！" + listeningMeaning + "　2回連続正解で復習完了。復習対象から外れました。" + relationNote;
     } else if (progressUpdate.reviewPending) {
-      feedbackText = "正解です！ あと1回連続正解で復習対象から外れます。";
+      feedbackText = "正解です！" + listeningMeaning + "　あと1回連続正解で復習対象から外れます。" + relationNote;
     } else {
-      feedbackText = "正解です！";
+      feedbackText = "正解です！" + listeningMeaning + relationNote;
     }
 
     $("#feedback").textContent=feedbackText;
@@ -2017,25 +3127,57 @@
     updatePracticeAvailability();
   }
 
+  function parseSynonymInput(value) {
+    return normalizeSynonyms(String(value || "").split(/[,、\n]+/));
+  }
+
+  function allRegisteredEnglishForms() {
+    const map = new Map();
+    for (const word of allWords()) {
+      for (const form of wordForms(word)) map.set(form.toLowerCase(), word);
+    }
+    return map;
+  }
+
   function initCustomWords() {
     $("#previewCustom").addEventListener("click", () => {
       const en=$("#customEnglish").value.trim();
       if(!en){ $("#customMessage").textContent="英単語を入力してください。"; return; }
       speak(en);
       const jp=$("#customJapanese").value.trim();
-      $("#customMessage").textContent=jp ? `${en}：${jp}` : `${en}（日本語は未入力です）`;
+      const synonyms=parseSynonymInput($("#customSynonyms").value);
+      const synonymText=synonyms.length ? `／関連語：${synonyms.join("、")}` : "";
+      $("#customMessage").textContent=jp ? `${en}：${jp}${synonymText}` : `${en}（日本語は未入力です）${synonymText}`;
     });
     $("#addCustom").addEventListener("click", () => {
       const english=$("#customEnglish").value.trim();
       const japanese=$("#customJapanese").value.trim();
+      const synonyms=parseSynonymInput($("#customSynonyms").value);
       const topic=$("#customTopic").value;
-      if(!/^[A-Za-z][A-Za-z -]*$/.test(english)){ $("#customMessage").textContent="英単語は半角英字・空白・ハイフンで入力してください。"; return; }
+      if(!/^[A-Za-z][A-Za-z .'-]*$/.test(english)){ $("#customMessage").textContent="英単語は半角英字を中心に、空白・ハイフンなどで入力してください。"; return; }
       if(!japanese){ $("#customMessage").textContent="日本語を入力してください。"; return; }
-      if(allWords().some(w=>w.english.toLowerCase()===english.toLowerCase())){ $("#customMessage").textContent="同じ英単語がすでに登録されています。"; return; }
-      customWords.push({id:`c${Date.now()}`,english,japanese,topic,source:"custom"});
+      if(synonyms.some(form => !/^[A-Za-z][A-Za-z .'-]*$/.test(form))){ $("#customMessage").textContent="同義語も半角英字を中心に入力し、複数ある場合はカンマで区切ってください。"; return; }
+      if(synonyms.some(form => form.toLowerCase() === english.toLowerCase())){ $("#customMessage").textContent="同じ英語表現を重複して登録しないでください。"; return; }
+      const registered=allRegisteredEnglishForms();
+      const collision=[english,...synonyms].find(form=>registered.has(form.toLowerCase()));
+      if(collision){ $("#customMessage").textContent=`「${collision}」はすでに単語として登録されています。`; return; }
+
+      const forms=[english,...synonyms];
+      const group=forms.length>1 ? `custom-syn-${generateCustomWordId("g")}` : "";
+      const created=forms.map((form,index)=>({
+        id:generateCustomWordId(index===0 ? "c" : "cs"),
+        english:form,
+        japanese,
+        topic,
+        source:"custom",
+        ...(group ? { synonymGroup:group, synonymKind:"同義語・言い換え" } : {})
+      }));
+      customWords.push(...created);
       save(STORAGE.custom,customWords);
-      $("#customEnglish").value=""; $("#customJapanese").value="";
-      $("#customMessage").textContent="登録しました。";
+      $("#customEnglish").value=""; $("#customJapanese").value=""; $("#customSynonyms").value="";
+      $("#customMessage").textContent=created.length>1
+        ? `${created.length}語をそれぞれ独立した単語として登録し、同義語グループで関連づけました。`
+        : "登録しました。";
       renderWords(); renderHome(); updatePracticeAvailability();
     });
   }
@@ -2080,6 +3222,8 @@
     const enabled=$("#wordEnabledFilter").value;
     const source=$("#wordSourceFilter").value;
     const learning=$("#wordLearningFilter").value;
+    const synonym=$("#wordSynonymFilter").value;
+    const antonym=$("#wordAntonymFilter").value;
 
     const filtered = allWords().filter(w=>{
       const progress=getWordProgress(w.id);
@@ -2090,10 +3234,12 @@
         || (learning==="attempted" && progress.attempts>0);
 
       return (
-        (!q || w.english.toLowerCase().includes(q) || w.japanese.toLowerCase().includes(q)) &&
+        (!q || w.english.toLowerCase().includes(q) || w.japanese.toLowerCase().includes(q) || synonymFormsForDisplay(w).some(form=>form.toLowerCase().includes(q)) || antonymFormsForDisplay(w).some(form=>form.toLowerCase().includes(q))) &&
         (topic==="all" || w.topic===topic) &&
         (source==="all" || w.source===source) &&
         (enabled==="all" || (enabled==="enabled" ? isEnabled(w) : !isEnabled(w))) &&
+        (synonym==="all" || (synonym==="yes" ? hasSynonyms(w) : !hasSynonyms(w))) &&
+        (antonym==="all" || (antonym==="yes" ? hasAntonyms(w) : !hasAntonyms(w))) &&
         learningMatch
       );
     });
@@ -2107,9 +3253,14 @@
       return `<tr>
       <td><input type="checkbox" class="word-enabled" data-id="${w.id}" ${isEnabled(w)?"checked":""} aria-label="${escapeHtml(w.english)}を出題"></td>
       <td><span class="learning-status ${learningStatus.type}">${escapeHtml(learningStatus.label)}</span></td>
-      <td><strong>${escapeHtml(w.english)}</strong></td><td>${escapeHtml(w.japanese)}</td><td>${topics[w.topic]||w.topic}</td>
+      <td>
+        <div class="word-with-synonyms"><strong>${escapeHtml(w.english)}</strong>
+          ${hasSynonyms(w) ? `<span class="synonym-kind">${escapeHtml(synonymRelationKind(w))}</span><span class="synonym-inline">同義語・言い換え：${synonymFormsForDisplay(w).map(escapeHtml).join(" / ")}</span>` : ""}
+          ${hasAntonyms(w) ? `<span class="antonym-kind">${escapeHtml(antonymRelationKinds(w).join("・"))}</span><span class="antonym-inline">対になる語：${antonymFormsForDisplay(w).map(escapeHtml).join(" / ")}</span>` : ""}
+        </div>
+      </td><td>${escapeHtml(w.japanese)}</td><td>${topics[w.topic]||w.topic}</td>
       <td>${w.source==="preset"?"プリセット":"個別登録"}</td>
-      <td><button class="icon-button speak-word" data-text="${escapeHtml(w.english)}">🔊</button></td>
+      <td><div class="word-audio-buttons"><button class="icon-button speak-word" data-text="${escapeHtml(w.english)}" title="${escapeHtml(w.english)} を読み上げ" aria-label="${escapeHtml(w.english)}を読み上げ">🔊<span>${escapeHtml(w.english)}</span></button></div></td>
       <td>${w.source==="custom"?`<button class="danger-outline delete-word" data-id="${w.id}">削除</button>`:"—"}</td>
     </tr>`;
     }).join("");
@@ -2122,6 +3273,8 @@
         customWords=customWords.filter(x=>x.id!==id);
         disabledIds.delete(id);
         delete wordProgress[id];
+        for (const source of Object.values(syncState?.sources || {})) delete source.words?.[id];
+        save(STORAGE.sync,syncState);
         save(STORAGE.custom,customWords);
         save(STORAGE.disabled,[...disabledIds]);
         save(STORAGE.wordProgress,wordProgress);
@@ -2129,8 +3282,108 @@
       }
     }));
   }
+  function speechRecognitionConstructor() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  function recognitionLanguage() {
+    const voice = getSelectedVoice();
+    const lang = String(voice?.lang || "").replace("_", "-");
+    return /^en(?:-|$)/i.test(lang) ? lang : "en-US";
+  }
+
+  function voiceSearchErrorMessage(error) {
+    const messages = {
+      "not-allowed": "マイクの利用が許可されていません。ブラウザのサイト設定でマイクを許可してください。",
+      "service-not-allowed": "この環境では音声認識サービスの利用が許可されていません。",
+      "audio-capture": "利用できるマイクを確認できませんでした。端末のマイク設定をご確認ください。",
+      "no-speech": "音声を認識できませんでした。マイクに近づいて、もう一度お試しください。",
+      "network": "音声認識の通信に失敗しました。インターネット接続が必要な環境では通信状態をご確認ください。",
+      "language-not-supported": "選択中の英語の言語設定では音声認識を利用できませんでした。",
+      "aborted": "音声検索を中止しました。"
+    };
+    return messages[error] || `音声認識でエラーが発生しました（${error || "unknown"}）。`;
+  }
+
+  function initVoiceSearch() {
+    const button = $("#voiceSearch");
+    const status = $("#voiceSearchStatus");
+    const input = $("#wordSearch");
+    if (!button || !status || !input) return;
+
+    const Recognition = speechRecognitionConstructor();
+    if (!Recognition) {
+      button.disabled = true;
+      status.textContent = "このブラウザでは音声検索（β）を利用できません。キーボード検索は通常どおり利用できます。";
+      status.classList.add("warning-text");
+      return;
+    }
+
+    let recognition = null;
+    let listening = false;
+
+    const finish = () => {
+      listening = false;
+      button.disabled = false;
+      button.classList.remove("listening");
+      button.innerHTML = '音声検索 <span class="beta-mark">β</span>';
+      recognition = null;
+    };
+
+    button.addEventListener("click", () => {
+      if (listening) return;
+
+      recognition = new Recognition();
+      recognition.lang = recognitionLanguage();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        listening = true;
+        button.disabled = true;
+        button.classList.add("listening");
+        button.textContent = "聞き取り中…";
+        status.classList.remove("warning-text", "success-text");
+        status.textContent = "英単語または短い英語表現を話してください。ブラウザの認識結果を検索欄へ入力します。";
+      };
+
+      recognition.onresult = event => {
+        const transcript = String(event.results?.[0]?.[0]?.transcript || "").trim();
+        if (!transcript) {
+          status.textContent = "音声から検索文字を取得できませんでした。もう一度お試しください。";
+          status.classList.add("warning-text");
+          return;
+        }
+
+        input.value = transcript;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        status.textContent = `ブラウザは「${transcript}」と認識しました。検索欄へ入力して検索しました。`;
+        status.classList.remove("warning-text");
+        status.classList.add("success-text");
+      };
+
+      recognition.onerror = event => {
+        status.textContent = voiceSearchErrorMessage(event.error);
+        status.classList.remove("success-text");
+        status.classList.add("warning-text");
+      };
+
+      recognition.onend = finish;
+
+      try {
+        recognition.start();
+      } catch (error) {
+        finish();
+        status.textContent = `音声検索を開始できませんでした（${error.message || "unknown"}）。`;
+        status.classList.remove("success-text");
+        status.classList.add("warning-text");
+      }
+    });
+  }
+
   function initWordList() {
-    ["#wordSearch","#wordTopicFilter","#wordEnabledFilter","#wordSourceFilter","#wordLearningFilter"].forEach(s=>$(s).addEventListener("input",renderWords));
+    ["#wordSearch","#wordTopicFilter","#wordEnabledFilter","#wordSourceFilter","#wordLearningFilter","#wordSynonymFilter","#wordAntonymFilter"].forEach(s=>$(s).addEventListener("input",renderWords));
     $$(".sort-button").forEach(button => button.addEventListener("click", () => {
       const key = button.dataset.sort;
       if (wordSort.key === key) wordSort.direction = wordSort.direction === "asc" ? "desc" : "asc";
@@ -2141,14 +3394,20 @@
     $("#disableVisible").addEventListener("click",()=>{visibleWordIds.forEach(id=>setEnabled(id,false));renderWords();renderHome();updatePracticeAvailability();});
     $("#exportWords").addEventListener("click",()=>downloadCsv(
       "english_words",
-      ["english","japanese","category","source","enabled","attempts","correct","wrong","review_target","review_correct_streak"],
+      ["id","english","japanese","category","source","synonym_group","synonym_relation_type","synonym_words","antonym_relation_type","antonym_words","enabled","attempts","correct","wrong","review_target","review_correct_streak"],
       allWords().map(w=>{
         const p=getWordProgress(w.id);
         return [
+          w.id,
           w.english,
           w.japanese,
           topics[w.topic]||w.topic,
           w.source==="preset"?"preset":"custom",
+          wordSynonymGroupKey(w),
+          synonymRelationKind(w),
+          synonymFormsForDisplay(w).join(" / "),
+          antonymRelationKinds(w).join(" / "),
+          antonymFormsForDisplay(w).join(" / "),
           isEnabled(w)?"1":"0",
           p.attempts,
           p.correct,
@@ -2158,6 +3417,308 @@
         ];
       })
     ));
+  }
+
+  function downloadJson(prefix, value) {
+    const blob = new Blob([JSON.stringify(value, null, 2)], { type:"application/json;charset=utf-8" });
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
+    a.href = URL.createObjectURL(blob);
+    a.download = `${prefix}_${stamp}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  function exportLearningData() {
+    const payload = {
+      format: "english-word-practice-learning-data",
+      schemaVersion: DATA_SCHEMA_VERSION,
+      appVersion: APP_VERSION,
+      exportedAt: new Date().toISOString(),
+      exportedBy: syncState.deviceId,
+      data: {
+        customWords,
+        disabledIds: [...disabledIds],
+        history,
+        achievements,
+        sync: {
+          schemaVersion: DATA_SCHEMA_VERSION,
+          sources: syncState.sources
+        }
+      }
+    };
+    downloadJson("english_word_practice_learning_data", payload);
+  }
+
+  function mergeSameSourceWord(localRaw, incomingRaw) {
+    const local = normalizeSyncWordEntry(localRaw);
+    const incoming = normalizeSyncWordEntry(incomingRaw);
+    const firsts = [local.firstAttemptedAt, incoming.firstAttemptedAt].filter(Boolean).sort();
+    const lasts = [local.lastAttemptedAt, incoming.lastAttemptedAt].filter(Boolean).sort();
+    const baselines = [local.baseline, incoming.baseline].filter(x => x?.at).sort((a,b) => a.at.localeCompare(b.at));
+    const forms = {};
+    for (const key of new Set([...Object.keys(local.forms), ...Object.keys(incoming.forms)])) {
+      const a = normalizeSyncFormEntry(local.forms[key]);
+      const b = normalizeSyncFormEntry(incoming.forms[key]);
+      const formFirsts = [a.firstAttemptedAt, b.firstAttemptedAt].filter(Boolean).sort();
+      const formLasts = [a.lastAttemptedAt, b.lastAttemptedAt].filter(Boolean).sort();
+      forms[key] = {
+        attempts: Math.max(a.attempts, b.attempts),
+        correct: Math.max(a.correct, b.correct),
+        wrong: Math.max(a.wrong, b.wrong),
+        firstAttemptedAt: formFirsts[0] || "",
+        lastAttemptedAt: formLasts.at(-1) || ""
+      };
+    }
+    return {
+      attempts: Math.max(local.attempts, incoming.attempts),
+      correct: Math.max(local.correct, incoming.correct),
+      wrong: Math.max(local.wrong, incoming.wrong),
+      firstAttemptedAt: firsts[0] || "",
+      lastAttemptedAt: lasts.at(-1) || "",
+      forms,
+      baseline: baselines.at(-1) || null,
+      recentAnswers: dedupeRecentAnswers([...local.recentAnswers, ...incoming.recentAnswers]).slice(-3)
+    };
+  }
+
+  function prepareImportedCustomWords(importedWords, schemaVersion) {
+    const prepared = [];
+    const legacyMappings = [];
+    for (const raw of Array.isArray(importedWords) ? importedWords : []) {
+      if (!raw || typeof raw.id !== "string" || typeof raw.english !== "string") continue;
+      const english = raw.english.trim();
+      const japanese = String(raw.japanese || "").trim();
+      if (!english || !japanese) continue;
+      const topic = topics[raw.topic] ? raw.topic : "other";
+      const legacyForms = normalizeSynonyms(raw.synonyms);
+      const shouldExpandLegacy = Number(schemaVersion) < 2 && legacyForms.length > 0;
+      const group = String(raw.synonymGroup || (shouldExpandLegacy ? `legacy-syn-${raw.id}` : "")).trim();
+      const kind = String(raw.synonymKind || "同義語・言い換え");
+
+      prepared.push({
+        id:raw.id,
+        english,
+        japanese,
+        topic,
+        source:"custom",
+        ...(group ? { synonymGroup:group, synonymKind:kind } : {})
+      });
+
+      if (shouldExpandLegacy) {
+        legacyForms.forEach((form, index) => {
+          const childId = `${raw.id}_syn${index + 1}`;
+          prepared.push({
+            id:childId,
+            english:form,
+            japanese,
+            topic,
+            source:"custom",
+            synonymGroup:group,
+            synonymKind:kind
+          });
+          legacyMappings.push({ parentId:raw.id, parentEnglish:english, childId, form });
+        });
+      }
+    }
+    return { prepared, legacyMappings };
+  }
+
+  function mergeCustomWordsForImport(importedWords, schemaVersion) {
+    const { prepared, legacyMappings } = prepareImportedCustomWords(importedWords, schemaVersion);
+    const idMap = new Map();
+    let added = 0;
+    const allByEnglish = new Map(allWords().map(word => [String(word.english).trim().toLowerCase(), word]));
+    const allById = new Map(allWords().map(word => [word.id, word]));
+    const groupRemap = new Map();
+
+    for (const raw of prepared) {
+      const incomingGroup = String(raw.synonymGroup || "").trim();
+      if (!incomingGroup || groupRemap.has(incomingGroup)) continue;
+      const existing = allByEnglish.get(raw.english.toLowerCase());
+      const existingGroup = existing ? wordSynonymGroupKey(existing) : "";
+      if (existingGroup) groupRemap.set(incomingGroup, existingGroup);
+    }
+
+    for (const raw of prepared) {
+      const englishKey = raw.english.toLowerCase();
+      const incomingGroup = String(raw.synonymGroup || "").trim();
+      const localGroup = incomingGroup ? (groupRemap.get(incomingGroup) || incomingGroup) : "";
+      const byId = allById.get(raw.id);
+      const byEnglish = allByEnglish.get(englishKey);
+      const existing = byId && String(byId.english).trim().toLowerCase() === englishKey ? byId : byEnglish;
+
+      if (existing) {
+        if (localGroup && !wordSynonymGroupKey(existing)) {
+          existing.synonymGroup = localGroup;
+          existing.synonymKind = raw.synonymKind || "同義語・言い換え";
+        }
+        idMap.set(raw.id, existing.id);
+        continue;
+      }
+
+      let id = raw.id;
+      if (allById.has(id)) id = generateCustomWordId("c");
+      const word = {
+        id,
+        english:raw.english,
+        japanese:raw.japanese,
+        topic:raw.topic,
+        source:"custom",
+        ...(localGroup ? { synonymGroup:localGroup, synonymKind:raw.synonymKind || "同義語・言い換え" } : {})
+      };
+      customWords.push(word);
+      allById.set(id, word);
+      allByEnglish.set(englishKey, word);
+      idMap.set(raw.id, id);
+      added += 1;
+    }
+
+    // 同じ取り込みグループに属する既存語も、決定したローカルグループへそろえる。
+    for (const raw of prepared) {
+      const incomingGroup = String(raw.synonymGroup || "").trim();
+      if (!incomingGroup) continue;
+      const localGroup = groupRemap.get(incomingGroup) || incomingGroup;
+      const localId = idMap.get(raw.id);
+      const word = allWords().find(item => item.id === localId);
+      if (word && !presetSynonymGroupById.has(word.id)) {
+        word.synonymGroup = localGroup;
+        word.synonymKind = raw.synonymKind || word.synonymKind || "同義語・言い換え";
+      }
+    }
+
+    return { idMap, added, legacyMappings };
+  }
+
+  function remapImportedWordId(id, idMap) {
+    return idMap.get(id) || id;
+  }
+
+  function mergeImportedSync(importedSync, idMap, schemaVersion, legacyMappings = []) {
+    let addedSources = 0;
+    const sources = importedSync?.sources;
+    if (!sources || typeof sources !== "object" || Array.isArray(sources)) return addedSources;
+
+    for (const [sourceId, rawSource] of Object.entries(sources)) {
+      if (!sourceId) continue;
+      const incoming = normalizeSyncSource(rawSource);
+      if (Number(schemaVersion) < 2) {
+        splitLegacyEntriesInSource(incoming, legacyMappings);
+      }
+      const remappedWords = {};
+      for (const [wordId, entry] of Object.entries(incoming.words)) {
+        const targetId = remapImportedWordId(wordId, idMap);
+        remappedWords[targetId] = remappedWords[targetId]
+          ? mergeSameSourceWord(remappedWords[targetId], entry)
+          : normalizeSyncWordEntry(entry);
+      }
+      incoming.words = remappedWords;
+
+      if (!syncState.sources[sourceId]) {
+        syncState.sources[sourceId] = incoming;
+        addedSources += 1;
+        continue;
+      }
+
+      const local = normalizeSyncSource(syncState.sources[sourceId]);
+      local.createdAt = [local.createdAt, incoming.createdAt].filter(Boolean).sort()[0] || local.createdAt;
+      local.sessions.completedSessions = Math.max(local.sessions.completedSessions, incoming.sessions.completedSessions);
+      local.sessions.perfectSessions = Math.max(local.sessions.perfectSessions, incoming.sessions.perfectSessions);
+      for (const mode of ["reading","writing","listening"]) {
+        local.sessions.correct[mode] = Math.max(local.sessions.correct[mode], incoming.sessions.correct[mode]);
+      }
+      for (const [wordId, entry] of Object.entries(incoming.words)) {
+        local.words[wordId] = local.words[wordId]
+          ? mergeSameSourceWord(local.words[wordId], entry)
+          : normalizeSyncWordEntry(entry);
+      }
+      syncState.sources[sourceId] = local;
+    }
+    return addedSources;
+  }
+
+  function mergeAchievements(importedAchievements) {
+    if (!importedAchievements || typeof importedAchievements !== "object" || Array.isArray(importedAchievements)) return;
+    for (const [id, at] of Object.entries(importedAchievements)) {
+      if (typeof at !== "string") continue;
+      if (!achievements[id] || at < achievements[id]) achievements[id] = at;
+    }
+  }
+
+  async function importLearningData(file) {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    if (!payload || payload.format !== "english-word-practice-learning-data" || ![1,2].includes(Number(payload.schemaVersion)) || !payload.data) {
+      throw new Error("このアプリの学習データJSONではありません。");
+    }
+
+    const importSchemaVersion = Number(payload.schemaVersion) || 1;
+    const { idMap, added: addedWords, legacyMappings: customLegacyMappings } = mergeCustomWordsForImport(payload.data.customWords, importSchemaVersion);
+    const importLegacyMappings = importSchemaVersion < 2
+      ? [...legacyPresetSplitMappings(), ...customLegacyMappings]
+      : [];
+    const existingHistoryIds = new Set(history.map(item => item.id));
+    let addedHistory = 0;
+    for (const item of Array.isArray(payload.data.history) ? payload.data.history : []) {
+      if (!item || typeof item.id !== "string" || existingHistoryIds.has(item.id)) continue;
+      history.push(item);
+      existingHistoryIds.add(item.id);
+      addedHistory += 1;
+    }
+    history.sort((a,b) => String(b.date || "").localeCompare(String(a.date || "")));
+
+    const importedDisabled = new Set(Array.isArray(payload.data.disabledIds) ? payload.data.disabledIds : []);
+    for (const id of importedDisabled) disabledIds.add(remapImportedWordId(id, idMap));
+    if (importSchemaVersion < 2) {
+      for (const mapping of importLegacyMappings) {
+        if (importedDisabled.has(mapping.parentId)) disabledIds.add(remapImportedWordId(mapping.childId, idMap));
+      }
+    }
+
+    const addedSources = mergeImportedSync(payload.data.sync, idMap, importSchemaVersion, importLegacyMappings);
+    mergeAchievements(payload.data.achievements);
+
+    save(STORAGE.custom, customWords);
+    save(STORAGE.disabled, [...disabledIds]);
+    save(STORAGE.history, history);
+    save(STORAGE.achievements, achievements);
+    save(STORAGE.sync, syncState);
+    rebuildLearningCachesFromSync();
+    const unlockedByMerge = evaluateAchievements(false);
+    if (unlockedByMerge.length) save(STORAGE.achievements, achievements);
+
+    renderHome();
+    renderWords();
+    renderHistory();
+    renderBadges();
+    updatePracticeAvailability();
+    return { addedWords, addedHistory, addedSources };
+  }
+
+  function resetLearningProgress() {
+    if (!confirm("バッジ実績と単語ごとの挑戦・復習状況をリセットします。スコア履歴と登録単語は残ります。続けますか？")) return;
+    if (!confirm("この操作では、バッジの累計値・獲得状況・未挑戦/復習対象などの学習進捗を0からやり直します。本当にリセットしますか？")) return;
+    const typed = prompt("最終確認です。リセットする場合は「リセット」と入力してください。");
+    if (typed !== "リセット") {
+      alert("入力が一致しなかったため、リセットしませんでした。");
+      return;
+    }
+
+    const deviceId = syncState?.deviceId || generateDeviceId();
+    syncState = { schemaVersion:DATA_SCHEMA_VERSION, deviceId, sources:{ [deviceId]:defaultSyncSource() } };
+    wordProgress = {};
+    learningStats = defaultLearningStats();
+    learningStats.migratedFromHistory = true;
+    achievements = {};
+    save(STORAGE.sync, syncState);
+    save(STORAGE.wordProgress, wordProgress);
+    save(STORAGE.learningStats, learningStats);
+    save(STORAGE.achievements, achievements);
+    renderHome();
+    renderWords();
+    renderBadges();
+    updatePracticeAvailability();
+    alert("バッジ実績と挑戦・復習状況をリセットしました。スコア履歴と登録単語は残しています。");
   }
 
   function renderHistory() {
@@ -2178,6 +3739,25 @@
     $("#exportHistory").addEventListener("click",()=>downloadCsv("english_score_history",
       ["date","total","correct","percent","reading_correct","reading_total","writing_correct","writing_total","listening_correct","listening_total"],
       history.map(h=>[formatDate(h.date),h.total,h.correct,h.percent,...(h.detail?.reading||[0,0]),...(h.detail?.writing||[0,0]),...(h.detail?.listening||[0,0])])));
+
+    $("#exportLearningData").addEventListener("click", exportLearningData);
+    $("#importLearningData").addEventListener("click", () => $("#importLearningDataFile").click());
+    $("#importLearningDataFile").addEventListener("change", async e => {
+      const file = e.target.files?.[0];
+      const message = $("#learningDataMessage");
+      if (!file) return;
+      try {
+        const result = await importLearningData(file);
+        message.textContent = `マージしました。追加履歴 ${result.addedHistory}件・追加登録単語 ${result.addedWords}件・新しい端末データ ${result.addedSources}件。重複データは二重加算していません。`;
+        message.className = "note data-message good";
+      } catch (error) {
+        console.error(error);
+        message.textContent = `読み込みできませんでした：${error.message || "JSONを確認してください。"}`;
+        message.className = "note data-message bad";
+      } finally {
+        e.target.value = "";
+      }
+    });
   }
   function downloadCsv(prefix,headers,rows) {
     const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
@@ -2198,7 +3778,9 @@
     initPracticeSettings();
     initCustomWords();
     initWordList();
+    initVoiceSearch();
     initHistory();
+    $("#resetLearningProgress").addEventListener("click", resetLearningProgress);
     renderHome();
     renderWords();
     renderBadges();

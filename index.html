@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>英単語 よみ・かき・リスニング</title>
-    <link rel="stylesheet" href="style.css?v=013" />
+    <link rel="stylesheet" href="style.css?v=018" />
   </head>
   <body>
     <header class="app-header">
@@ -100,9 +100,14 @@
                 <p class="eyebrow">Practice Settings</p>
                 <h2>練習設定</h2>
               </div>
-              <button id="selectRecommended" class="secondary">
-                おすすめ設定
-              </button>
+              <div class="section-heading-actions">
+                <button id="selectRecommended" class="secondary" type="button">
+                  おすすめ設定
+                </button>
+                <button id="startPracticeTop" class="primary practice-start-button" type="button">
+                  練習開始
+                </button>
+              </div>
             </div>
 
             <div class="settings-grid">
@@ -201,6 +206,21 @@
                 </p>
               </fieldset>
 
+              <fieldset class="study-mode-fieldset">
+                <legend>出題の優先設定</legend>
+                <label>
+                  <input type="checkbox" id="synonymPriority" />
+                  同義語・言い換えのある単語を優先
+                </label>
+                <label>
+                  <input type="checkbox" id="antonymPriority" />
+                  対義語・対になる語を優先
+                </label>
+                <p class="note">
+                  通常・復習対象・まだやっていない単語の各モードと組み合わせて使えます。両方を選んだ場合は、どちらかの関係を持つ単語を先に出題し、不足分をその他の対象単語から補います。
+                </p>
+              </fieldset>
+
               <div class="field-group">
                 <label for="questionCount">出題数</label>
                 <select id="questionCount">
@@ -251,7 +271,7 @@
 
             <div class="start-row">
               <p id="practiceAvailability" class="status-text"></p>
-              <button id="startPractice" class="primary large">練習開始</button>
+              <button id="startPractice" class="primary large practice-start-button">練習開始</button>
             </div>
           </div>
 
@@ -353,6 +373,14 @@
                   placeholder="例：虹"
               /></label>
               <label
+                >同義語・言い換え（任意）<input
+                  id="customSynonyms"
+                  type="text"
+                  maxlength="160"
+                  placeholder="例：colour, hue"
+                  autocomplete="off"
+              /></label>
+              <label
                 >カテゴリ
                 <select id="customTopic"></select>
               </label>
@@ -367,7 +395,7 @@
               ></span>
             </div>
             <p class="note">
-              日本語の自動取得には外部辞書APIを使わず、正確性と利用規約管理のため利用者入力としています。
+              日本語の自動取得には外部辞書APIを使わず、正確性と利用規約管理のため利用者入力としています。同義語・言い換えはカンマ区切りで複数登録できます。登録時は各表現に独立した単語IDを付け、同義語グループとして関連づけます。
             </p>
           </div>
 
@@ -388,12 +416,17 @@
               </div>
             </div>
             <div class="filter-grid">
-              <label
-                >検索<input
-                  id="wordSearch"
-                  type="search"
-                  placeholder="英単語・日本語で検索"
-              /></label>
+              <div class="search-filter">
+                <label for="wordSearch">検索</label>
+                <div class="search-input-row">
+                  <input
+                    id="wordSearch"
+                    type="search"
+                    placeholder="英単語・関連語・日本語で検索"
+                  />
+                  <button id="voiceSearch" class="secondary voice-search-button" type="button" aria-describedby="voiceSearchStatus" title="試験的な音声入力による検索">音声検索 <span class="beta-mark">β</span></button>
+                </div>
+              </div>
               <label
                 >カテゴリ<select id="wordTopicFilter">
                   <option value="all">すべて</option>
@@ -422,7 +455,33 @@
                   <option value="attempted">挑戦済み</option>
                 </select>
               </label>
+              <label
+                >同義語・言い換え
+                <select id="wordSynonymFilter">
+                  <option value="all">すべて</option>
+                  <option value="yes">同義語・言い換えあり</option>
+                  <option value="no">同義語・言い換えなし</option>
+                </select>
+              </label>
+              <label
+                >対義語・対になる語
+                <select id="wordAntonymFilter">
+                  <option value="all">すべて</option>
+                  <option value="yes">対義語・対になる語あり</option>
+                  <option value="no">対義語・対になる語なし</option>
+                </select>
+              </label>
             </div>
+            <div class="voice-search-info">
+              <p id="voiceSearchStatus" class="status-text" aria-live="polite">音声検索（β）は、気になったときに試せる補助機能です。</p>
+              <details class="voice-search-help">
+                <summary>音声検索（β）について</summary>
+                <p class="note">端末・ブラウザ・マイクが認識した英語を、そのまま検索欄へ入力して検索する試験的な機能です。認識結果が想定した単語と異なることがありますが、発音の正確さ・発音品質・英語力を判定するものではありません。マイクの利用許可が必要で、ブラウザの音声認識方式によってはインターネット接続が必要です。利用できない環境でも、通常のキーボード検索や練習機能には影響しません。</p>
+              </details>
+            </div>
+            <p class="note synonym-note">
+              同義語・言い換え、対義語・対になる語は、独立した単語IDどうしの関係として表示します。同義語どうしは四択の誤答候補として衝突させず、対義語は意味の違いを学べるため通常の選択肢候補として扱います。
+            </p>
             <div class="table-wrap">
               <table>
                 <thead>
@@ -483,29 +542,45 @@
             <div class="section-heading">
               <div>
                 <p class="eyebrow">Achievements</p>
-                <h2>バッジ・実績</h2>
+                <div class="achievement-title-row">
+                  <h2>バッジ・実績</h2>
+                  <span id="achievementHeaderProgress" class="achievement-header-progress" aria-live="polite"></span>
+                </div>
+              </div>
+              <div class="inline-actions">
+                <button id="resetLearningProgress" class="danger-outline">バッジ・挑戦状況をリセット</button>
               </div>
             </div>
             <p class="note">
-              練習を続けるとバッジを獲得できます。スコア履歴を削除しても、獲得済みバッジと学習進捗は残ります。
+              練習を続けるとバッジを獲得できます。スコア履歴を削除しても、獲得済みバッジと学習進捗は残ります。リセットは複数回の確認後にのみ実行され、スコア履歴と登録単語は削除しません。
             </p>
             <div id="achievementSummary" class="achievement-summary-grid"></div>
           </div>
 
           <div id="achievementSeries" class="achievement-series-list"></div>
 
-          <div class="card secret-achievement-card">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Secret Badge</p>
-                <h2>シークレットバッジ</h2>
-              </div>
-            </div>
-            <div id="secretAchievement"></div>
-          </div>
+          <div id="secretAchievement"></div>
         </section>
 
         <section id="screen-history" class="screen">
+          <div class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Data Transfer</p>
+                <h2>学習データの端末間連携</h2>
+              </div>
+              <div class="inline-actions">
+                <button id="exportLearningData" class="secondary">学習データを出力</button>
+                <button id="importLearningData" class="secondary">マージ読込</button>
+                <input id="importLearningDataFile" type="file" accept=".json,application/json" hidden />
+              </div>
+            </div>
+            <p class="note">
+              JSONには、スコア履歴、バッジ累計、単語ごとの挑戦・正解・復習状況、同義語グループを含む個別登録単語、出題OFF設定を保存します。別端末で読み込むと、端末ごとの累計と時刻情報を使ってマージし、同じデータの再読込は二重加算しないように扱います。画面テーマと音声設定は端末ごとの設定として含めません。
+            </p>
+            <p id="learningDataMessage" class="note data-message">複数端末で使う場合は、それぞれの端末から出力したJSONを順番にマージできます。</p>
+          </div>
+
           <div class="card">
             <div class="section-heading">
               <div>
@@ -569,13 +644,11 @@
             </p>
             <h3>5. バッジ・実績</h3>
             <p>
-              練習完了回数、100%正解回数、読み・書き・リスニングの累計正解数でバッジを獲得できます。バッジ画面では、現在値、次の目標、獲得済みバッジを確認できます。
+              練習完了回数、100%正解回数、読み・書き・リスニングの累計正解数でバッジを獲得できます。さらにシークレット実績として、同義語・言い換えを一通り経験して復習対象をなくす「同義語マスター」と、全単語を一通り経験して復習対象をなくす「オールクリア」があります。未獲得時は実績名を伏せ、解禁条件と進捗だけを表示します。日本語・英語の達成コメントは、各バッジを獲得したときに初めて表示されます。
             </p>
-            <h3>6. 保存について</h3>
+            <h3>6. 保存・端末間連携について</h3>
             <p>
-              個別単語、出題設定、画面テーマ、スコア履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの
-              localStorage
-              に保存します。ブラウザデータを消去すると失われます。スコア履歴を削除しても学習進捗とバッジ実績は削除されません。
+              個別単語、出題設定、画面テーマ、スコア履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの localStorage に保存します。ブラウザデータを消去すると失われます。「履歴」タブの学習データ出力では、履歴・挑戦状況・バッジ実績などをJSONに保存し、別端末では「マージ読込」で統合できます。同じ端末データを再読込しても、端末別の累計を基準に二重加算しないようにしています。
             </p>
           </div>
         </section>
@@ -588,6 +661,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=013"></script>
+    <script src="app.js?v=018"></script>
   </body>
 </html>
