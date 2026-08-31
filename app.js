@@ -1885,16 +1885,7 @@
     `;
   }
 
-  function renderBadges() {
-    const summary = $("#achievementSummary");
-    const headerProgress = $("#achievementHeaderProgress");
-    const seriesArea = $("#achievementSeries");
-    const secretArea = $("#secretAchievement");
-    if (!summary || !seriesArea || !secretArea) return;
-
-    const words = allWords();
-    const attempted = words.filter(word => !isUntriedWord(word)).length;
-    const review = words.filter(isReviewTarget).length;
+  function achievementCountInfo() {
     const validAchievementIds = new Set();
 
     for (const series of achievementSeriesDefinitions()) {
@@ -1906,10 +1897,25 @@
     validAchievementIds.add("secret_antonym_master");
     validAchievementIds.add("secret_all_clear");
 
-    const unlockedCount = Object.keys(achievements)
-      .filter(id => validAchievementIds.has(id))
-      .length;
-    const totalBadgeCount = validAchievementIds.size;
+    return {
+      unlocked: Object.keys(achievements).filter(id => validAchievementIds.has(id)).length,
+      total: validAchievementIds.size
+    };
+  }
+
+  function renderBadges() {
+    const summary = $("#achievementSummary");
+    const headerProgress = $("#achievementHeaderProgress");
+    const seriesArea = $("#achievementSeries");
+    const secretArea = $("#secretAchievement");
+    if (!summary || !seriesArea || !secretArea) return;
+
+    const words = allWords();
+    const attempted = words.filter(word => !isUntriedWord(word)).length;
+    const review = words.filter(isReviewTarget).length;
+    const badgeCounts = achievementCountInfo();
+    const unlockedCount = badgeCounts.unlocked;
+    const totalBadgeCount = badgeCounts.total;
 
     if (headerProgress) {
       headerProgress.innerHTML = `<span>獲得バッジ</span><strong>${unlockedCount}/${totalBadgeCount}</strong>`;
@@ -1995,7 +2001,7 @@
       <details class="achievement-series-card secret-achievement-card">
         <summary>
           <div class="achievement-series-title">
-            <strong>シークレット実績</strong>
+            <strong>？？？</strong>
             <span>獲得 ${secretUnlockedCount} / 3</span>
           </div>
         </summary>
@@ -2560,8 +2566,8 @@
     const enabled = allWords().filter(isEnabled).length;
     $("#homeActiveWords").textContent = enabled;
     $("#homeHistoryCount").textContent = history.length;
-    const best = history.length ? Math.max(...history.map(h => h.percent)) : null;
-    $("#homeBestScore").textContent = best == null ? "--" : `${best}%`;
+    const badgeCounts = achievementCountInfo();
+    $("#homeBadgeProgress").textContent = `${badgeCounts.unlocked}/${badgeCounts.total}`;
   }
 
   function applyRecommendedSettings() {
