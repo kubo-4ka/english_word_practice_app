@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>英単語 よみ・かき・リスニング</title>
-    <link rel="stylesheet" href="style.css?v=024" />
+    <link rel="stylesheet" href="style.css?v=025" />
   </head>
   <body>
     <header class="app-header">
@@ -45,7 +45,7 @@
               <span class="pill">小学生向け・基礎英単語</span>
               <h2>今日の英単語練習を始めましょう</h2>
               <p>
-                英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と自分で登録した単語から、10〜100問に挑戦できます。
+                英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と「あなたの単語」から、10〜100問に挑戦できます。
               </p>
               <div class="hero-actions">
                 <button id="startRecommendedHome" class="primary">
@@ -67,6 +67,31 @@
               </div>
             </div>
           </div>
+
+          <article class="card home-random-word" aria-labelledby="homeRandomTitle">
+            <div class="section-heading home-random-heading">
+              <div>
+                <p class="eyebrow">Random Word</p>
+                <h2 id="homeRandomTitle">今日のランダム英単語</h2>
+                <p class="note">登録されている単語から、ランダムに1語を表示します。</p>
+              </div>
+              <div class="inline-actions home-random-actions">
+                <button id="homeRandomSpeak" class="secondary" type="button">音声を聞く</button>
+                <button id="homeRandomNext" class="secondary" type="button">別の単語</button>
+              </div>
+            </div>
+            <div class="home-random-body">
+              <div class="home-random-word-main">
+                <strong id="homeRandomEnglish">—</strong>
+                <span id="homeRandomJapanese">—</span>
+              </div>
+              <div class="home-random-meta">
+                <span id="homeRandomCategory" class="count-chip">—</span>
+                <span id="homeRandomSource" class="count-chip">—</span>
+              </div>
+              <p id="homeRandomRelations" class="home-random-relations hidden"></p>
+            </div>
+          </article>
 
           <div class="feature-grid">
             <article class="card feature">
@@ -181,7 +206,7 @@
                     value="custom"
                     checked
                   />
-                  個別登録</label
+                  あなたの単語</label
                 >
               </fieldset>
 
@@ -349,13 +374,15 @@
         </section>
 
         <section id="screen-words" class="screen">
-          <div class="card">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">My Words</p>
-                <h2>個別単語の登録</h2>
-              </div>
-            </div>
+          <details class="card my-words-register">
+            <summary class="my-words-summary">
+              <span class="my-words-summary-heading">
+                <span class="eyebrow">My Words</span>
+                <span class="my-words-title">あなたの単語</span>
+              </span>
+              <span class="my-words-summary-note">プリセット以外の単語を自分で登録できます。</span>
+            </summary>
+            <div class="my-words-register-body">
             <div class="register-grid">
               <label
                 >英単語<input
@@ -397,7 +424,8 @@
             <p class="note">
               日本語の自動取得には外部辞書APIを使わず、正確性と利用規約管理のため利用者入力としています。同義語・言い換えはカンマ区切りで複数登録できます。登録時は各表現に独立した単語IDを付け、同義語グループとして関連づけます。
             </p>
-          </div>
+            </div>
+          </details>
 
           <div class="card">
             <div class="section-heading">
@@ -443,7 +471,7 @@
                 >種類<select id="wordSourceFilter">
                   <option value="all">すべて</option>
                   <option value="preset">プリセット</option>
-                  <option value="custom">個別登録</option>
+                  <option value="custom">あなたの単語</option>
                 </select></label
               >
               <label
@@ -576,7 +604,7 @@
               </div>
             </div>
             <p class="note">
-              JSONには、スコア履歴、バッジ累計、単語ごとの挑戦・正解・復習状況、同義語グループを含む個別登録単語、出題OFF設定を保存します。別端末で読み込むと、端末ごとの累計と時刻情報を使ってマージし、同じデータの再読込は二重加算しないように扱います。画面テーマと音声設定は端末ごとの設定として含めません。
+              JSONには、スコア履歴、バッジ累計、単語ごとの挑戦・正解・復習状況、同義語グループを含む「あなたの単語」、出題OFF設定を保存します。別端末で読み込むと、端末ごとの累計と時刻情報を使ってマージし、同じデータの再読込は二重加算しないように扱います。画面テーマと音声設定は端末ごとの設定として含めません。
             </p>
             <p id="learningDataMessage" class="note data-message">複数端末で使う場合は、それぞれの端末から出力したJSONを順番にマージできます。</p>
           </div>
@@ -627,7 +655,7 @@
             </p>
             <h3>1. 単語を準備する</h3>
             <p>
-              最初からプリセット単語が入っています。「単語一覧」で、単語ごとに出題するかどうかを変更できます。自分の単語も登録できます。
+              最初からプリセット単語が入っています。「単語一覧」で、単語ごとに出題するかどうかを変更できます。プリセットにない単語は「あなたの単語」として登録できます。
             </p>
             <h3>2. 練習内容を選ぶ</h3>
             <p>
@@ -651,7 +679,7 @@
             </p>
             <h3>6. 保存・端末間連携について</h3>
             <p>
-              個別単語、出題設定、画面テーマ、スコア履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの localStorage に保存します。ブラウザデータを消去すると失われます。「履歴」タブの学習データ出力では、履歴・挑戦状況・バッジ実績などをJSONに保存し、別端末では「マージ読込」で統合できます。同じ端末データを再読込しても、端末別の累計を基準に二重加算しないようにしています。
+              「あなたの単語」、出題設定、画面テーマ、スコア履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの localStorage に保存します。ブラウザデータを消去すると失われます。「履歴」タブの学習データ出力では、履歴・挑戦状況・バッジ実績などをJSONに保存し、別端末では「マージ読込」で統合できます。同じ端末データを再読込しても、端末別の累計を基準に二重加算しないようにしています。
             </p>
           </div>
         </section>
@@ -664,6 +692,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=024"></script>
+    <script src="app.js?v=025"></script>
   </body>
 </html>

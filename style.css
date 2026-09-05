@@ -1340,6 +1340,7 @@ footer {
   margin-top: 16px;
 }
 
+/* v017: 同義語・言い換え表示 */
 .word-with-synonyms {
   display: flex;
   flex-wrap: wrap;
@@ -1399,6 +1400,7 @@ footer {
   }
 }
 
+/* v018: 同義語マスター用の青系ダブルバッジ */
 .badge-blue {
   background: linear-gradient(145deg, #8ed8ff, #1976d2 58%, #0d4f9c);
 }
@@ -1426,6 +1428,7 @@ footer {
   line-height: 1.55;
 }
 
+/* v020: バッジ画面の認知負荷軽減 */
 .achievement-title-row {
   display: flex;
   flex-wrap: wrap;
@@ -1470,6 +1473,8 @@ footer {
   }
 }
 
+
+/* v023: 対義語・対になる語 */
 .antonym-kind {
   display: inline-flex;
   align-items: center;
@@ -1494,9 +1499,148 @@ footer {
 .badge-teal {
   background: linear-gradient(145deg, #8fe8dc, #269b9b 58%, #17606c);
 }
-.secret-opposite-badge .badge-medal:first-child {
-  transform: translateY(-2px);
+.secret-opposite-badge .badge-medal:first-child { transform: translateY(-2px); }
+.secret-opposite-badge .badge-medal:last-child { transform: translateY(2px); }
+
+/* v025: ホームのランダム英単語 */
+.home-random-word {
+  padding: 24px;
 }
-.secret-opposite-badge .badge-medal:last-child {
-  transform: translateY(2px);
+.home-random-heading {
+  margin-bottom: 14px;
+  align-items: center;
+}
+.home-random-heading .note {
+  margin: 4px 0 0;
+}
+.home-random-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.home-random-word-main {
+  min-width: 0;
+}
+.home-random-word-main strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--primary);
+  font-size: clamp(1.7rem, 4vw, 2.55rem);
+  line-height: 1.15;
+}
+.home-random-word-main span {
+  display: block;
+  margin-top: 7px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.home-random-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+.home-random-relations {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* v025: My Words / あなたの単語 */
+.my-words-register {
+  padding: 0;
+  overflow: hidden;
+}
+.my-words-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.my-words-summary::-webkit-details-marker {
+  display: none;
+}
+.my-words-summary::after {
+  content: "＋";
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  font-weight: 900;
+}
+.my-words-register[open] .my-words-summary::after {
+  content: "−";
+}
+.my-words-register[open] .my-words-summary {
+  border-bottom: 1px solid var(--line);
+}
+.my-words-summary-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.my-words-summary-heading .eyebrow {
+  margin: 0;
+}
+.my-words-title {
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.my-words-summary-note {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.my-words-register-body {
+  padding: 22px 24px 24px;
+}
+
+@media (max-width: 720px) {
+  .home-random-heading {
+    align-items: flex-start;
+  }
+  .home-random-actions {
+    width: 100%;
+  }
+  .home-random-actions button {
+    flex: 1 1 140px;
+  }
+  .home-random-body {
+    grid-template-columns: 1fr;
+  }
+  .home-random-meta {
+    justify-content: flex-start;
+  }
+  .my-words-summary {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .my-words-summary-note {
+    order: 3;
+    width: calc(100% - 46px);
+    margin-left: 0;
+  }
+  .my-words-summary::after {
+    margin-left: auto;
+  }
 }

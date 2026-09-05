@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "023";
+  const APP_VERSION = "025";
   const DATA_SCHEMA_VERSION = 2;
 
   const STORAGE = {
@@ -1014,6 +1014,7 @@
   };
   const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
   let customWords = load(STORAGE.custom, []);
+  let homeRandomWordId = "";
   let disabledIds = new Set(load(STORAGE.disabled, []));
   let history = load(STORAGE.history, []);
   let wordProgress = load(STORAGE.wordProgress, {});
@@ -2562,12 +2563,78 @@
     $$('input[name="topic"]').forEach(x => x.addEventListener("change", updatePracticeAvailability));
   }
 
+  function pickHomeRandomWord(forceNew = false) {
+    const pool = allWords();
+    if (!pool.length) {
+      homeRandomWordId = "";
+      return null;
+    }
+
+    const current = pool.find(word => word.id === homeRandomWordId);
+    if (current && !forceNew) return current;
+
+    const candidates = forceNew && pool.length > 1
+      ? pool.filter(word => word.id !== homeRandomWordId)
+      : pool;
+    const word = candidates[Math.floor(Math.random() * candidates.length)] || pool[0];
+    homeRandomWordId = word.id;
+    return word;
+  }
+
+  function renderHomeRandomWord(forceNew = false) {
+    const word = pickHomeRandomWord(forceNew);
+    const english = $("#homeRandomEnglish");
+    const japanese = $("#homeRandomJapanese");
+    const category = $("#homeRandomCategory");
+    const source = $("#homeRandomSource");
+    const relations = $("#homeRandomRelations");
+    const speakButton = $("#homeRandomSpeak");
+    const nextButton = $("#homeRandomNext");
+    if (!english || !japanese || !category || !source || !relations) return;
+
+    if (!word) {
+      english.textContent = "—";
+      japanese.textContent = "表示できる単語がありません";
+      category.textContent = "—";
+      source.textContent = "—";
+      relations.textContent = "";
+      relations.classList.add("hidden");
+      if (speakButton) speakButton.disabled = true;
+      if (nextButton) nextButton.disabled = true;
+      return;
+    }
+
+    english.textContent = word.english;
+    japanese.textContent = word.japanese;
+    category.textContent = topics[word.topic] || "その他";
+    source.textContent = word.source === "preset" ? "プリセット" : "あなたの単語";
+
+    const notes = [];
+    const synonyms = synonymFormsForDisplay(word);
+    const antonyms = antonymFormsForDisplay(word);
+    if (synonyms.length) notes.push(`${synonymRelationKind(word) || "同義語・言い換え"}：${synonyms.join(" / ")}`);
+    if (antonyms.length) notes.push(`対になる語：${antonyms.join(" / ")}`);
+    relations.textContent = notes.join("　");
+    relations.classList.toggle("hidden", notes.length === 0);
+    if (speakButton) speakButton.disabled = false;
+    if (nextButton) nextButton.disabled = false;
+  }
+
+  function initHomeRandomWord() {
+    $("#homeRandomNext")?.addEventListener("click", () => renderHomeRandomWord(true));
+    $("#homeRandomSpeak")?.addEventListener("click", () => {
+      const word = allWords().find(item => item.id === homeRandomWordId);
+      if (word) speak(word.english);
+    });
+  }
+
   function renderHome() {
     const enabled = allWords().filter(isEnabled).length;
     $("#homeActiveWords").textContent = enabled;
     $("#homeHistoryCount").textContent = history.length;
     const badgeCounts = achievementCountInfo();
     $("#homeBadgeProgress").textContent = `${badgeCounts.unlocked}/${badgeCounts.total}`;
+    renderHomeRandomWord(false);
   }
 
   function applyRecommendedSettings() {
@@ -3265,7 +3332,7 @@
           ${hasAntonyms(w) ? `<span class="antonym-kind">${escapeHtml(antonymRelationKinds(w).join("・"))}</span><span class="antonym-inline">対になる語：${antonymFormsForDisplay(w).map(escapeHtml).join(" / ")}</span>` : ""}
         </div>
       </td><td>${escapeHtml(w.japanese)}</td><td>${topics[w.topic]||w.topic}</td>
-      <td>${w.source==="preset"?"プリセット":"個別登録"}</td>
+      <td>${w.source==="preset"?"プリセット":"あなたの単語"}</td>
       <td><div class="word-audio-buttons"><button class="icon-button speak-word" data-text="${escapeHtml(w.english)}" title="${escapeHtml(w.english)} を読み上げ" aria-label="${escapeHtml(w.english)}を読み上げ">🔊<span>${escapeHtml(w.english)}</span></button></div></td>
       <td>${w.source==="custom"?`<button class="danger-outline delete-word" data-id="${w.id}">削除</button>`:"—"}</td>
     </tr>`;
@@ -3754,7 +3821,7 @@
       if (!file) return;
       try {
         const result = await importLearningData(file);
-        message.textContent = `マージしました。追加履歴 ${result.addedHistory}件・追加登録単語 ${result.addedWords}件・新しい端末データ ${result.addedSources}件。重複データは二重加算していません。`;
+        message.textContent = `マージしました。追加履歴 ${result.addedHistory}件・追加した「あなたの単語」 ${result.addedWords}件・新しい端末データ ${result.addedSources}件。重複データは二重加算していません。`;
         message.className = "note data-message good";
       } catch (error) {
         console.error(error);
@@ -3779,6 +3846,7 @@
     initializeLearningData();
     initNavigation();
     initTheme();
+    initHomeRandomWord();
     populateTopics();
     initVoiceSettings();
     initPracticeSettings();
