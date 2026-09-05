@@ -4,10 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>英単語 よみ・かき・リスニング</title>
-    <link rel="stylesheet" href="style.css?v=025" />
+    <link rel="stylesheet" href="style.css?v=026" />
   </head>
   <body>
-    <header class="app-header">
+    <div id="contentScroll" class="content-scroll">
+      <header class="app-header">
       <div class="brand-block">
         <p class="eyebrow">English Word Practice</p>
         <h1>
@@ -26,18 +27,17 @@
           <option value="5">ダーク</option>
         </select>
       </label>
-    </header>
+      </header>
 
-    <nav class="tabs" aria-label="画面切り替え">
+      <nav class="tabs" aria-label="画面切り替え">
       <button class="tab active" data-screen="home">ホーム</button>
       <button class="tab" data-screen="practice">練習</button>
       <button class="tab" data-screen="words">単語一覧</button>
       <button class="tab" data-screen="badges">バッジ</button>
       <button class="tab" data-screen="history">履歴</button>
       <button class="tab" data-screen="help">使い方</button>
-    </nav>
+      </nav>
 
-    <div id="contentScroll" class="content-scroll">
       <main>
         <section id="screen-home" class="screen active">
           <div class="hero card">
@@ -692,6 +692,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=025"></script>
+    <script src="app.js?v=026"></script>
   </body>
 </html>
