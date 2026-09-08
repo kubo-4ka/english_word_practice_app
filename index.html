@@ -1,41 +1,60 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="1">
+<html lang="ja" data-theme="1" class="app-loading">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>英単語 よみ・かき・リスニング</title>
-    <link rel="stylesheet" href="style.css?v=026" />
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem("ewp_theme_v1") || "1";
+      } catch (_) {}
+    </script>
+    <link rel="stylesheet" href="style.css?v=032" />
   </head>
   <body>
+    <div
+      id="loadingOverlay"
+      class="loading-overlay"
+      role="status"
+      aria-live="polite"
+      aria-label="読み込み中"
+    >
+      <div class="loading-card">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <strong>読み込み中…</strong>
+      </div>
+    </div>
     <div id="contentScroll" class="content-scroll">
       <header class="app-header">
-      <div class="brand-block">
-        <p class="eyebrow">English Word Practice</p>
-        <h1>
-          <span class="title-full">英単語 よみ・かき・リスニング</span
-          ><span class="title-compact">英単語 よみ・かき・リスニング</span>
-        </h1>
-        <p class="subtitle">四択で、読む・書く・聞くをくり返し練習します。</p>
-      </div>
-      <label class="theme-picker">
-        <span class="theme-label">画面テーマ</span>
-        <select id="themeSelect" aria-label="画面テーマ">
-          <option value="1" selected>ライト</option>
-          <option value="2">パステルカラー</option>
-          <option value="3">レトロセピア</option>
-          <option value="4">グレースケール</option>
-          <option value="5">ダーク</option>
-        </select>
-      </label>
+        <div class="brand-block">
+          <p class="eyebrow">English Word Practice</p>
+          <h1>
+            <span class="title-full">英単語 よみ・かき・リスニング</span
+            ><span class="title-compact">英単語 よみ・かき・リスニング</span>
+          </h1>
+          <p class="subtitle">四択で、読む・書く・聞くをくり返し練習します。</p>
+        </div>
+        <label class="theme-picker">
+          <span class="theme-label">画面テーマ</span>
+          <select id="themeSelect" aria-label="画面テーマ">
+            <option value="1" selected>ライト</option>
+            <option value="2">パステルカラー</option>
+            <option value="3">レトロセピア</option>
+            <option value="4">グレースケール</option>
+            <option value="5">ダーク</option>
+          </select>
+        </label>
       </header>
 
       <nav class="tabs" aria-label="画面切り替え">
-      <button class="tab active" data-screen="home">ホーム</button>
-      <button class="tab" data-screen="practice">練習</button>
-      <button class="tab" data-screen="words">単語一覧</button>
-      <button class="tab" data-screen="badges">バッジ</button>
-      <button class="tab" data-screen="history">履歴</button>
-      <button class="tab" data-screen="help">使い方</button>
+        <button class="tab active" data-screen="home">ホーム</button>
+        <button class="tab" data-screen="practice">練習</button>
+        <button class="tab" data-screen="experiment">実験</button>
+        <button class="tab" data-screen="words">単語一覧</button>
+        <button class="tab" data-screen="badges">バッジ</button>
+        <button class="tab" data-screen="history">履歴</button>
+        <button class="tab" data-screen="help">使い方</button>
       </nav>
 
       <main>
@@ -63,21 +82,31 @@
                 ><span>保存済み履歴</span>
               </div>
               <div>
-                <strong id="homeBadgeProgress">0/58</strong><span>獲得バッジ</span>
+                <strong id="homeBadgeProgress">0/58</strong
+                ><span>獲得バッジ</span>
               </div>
             </div>
           </div>
 
-          <article class="card home-random-word" aria-labelledby="homeRandomTitle">
+          <article
+            class="card home-random-word"
+            aria-labelledby="homeRandomTitle"
+          >
             <div class="section-heading home-random-heading">
               <div>
                 <p class="eyebrow">Random Word</p>
                 <h2 id="homeRandomTitle">今日のランダム英単語</h2>
-                <p class="note">登録されている単語から、ランダムに1語を表示します。</p>
+                <p class="note">
+                  登録されている単語から、ランダムに1語を表示します。
+                </p>
               </div>
               <div class="inline-actions home-random-actions">
-                <button id="homeRandomSpeak" class="secondary" type="button">音声を聞く</button>
-                <button id="homeRandomNext" class="secondary" type="button">別の単語</button>
+                <button id="homeRandomSpeak" class="secondary" type="button">
+                  音声を聞く
+                </button>
+                <button id="homeRandomNext" class="secondary" type="button">
+                  別の単語
+                </button>
               </div>
             </div>
             <div class="home-random-body">
@@ -89,7 +118,10 @@
                 <span id="homeRandomCategory" class="count-chip">—</span>
                 <span id="homeRandomSource" class="count-chip">—</span>
               </div>
-              <p id="homeRandomRelations" class="home-random-relations hidden"></p>
+              <p
+                id="homeRandomRelations"
+                class="home-random-relations hidden"
+              ></p>
             </div>
           </article>
 
@@ -129,7 +161,11 @@
                 <button id="selectRecommended" class="secondary" type="button">
                   おすすめ設定
                 </button>
-                <button id="startPracticeTop" class="primary practice-start-button" type="button">
+                <button
+                  id="startPracticeTop"
+                  class="primary practice-start-button"
+                  type="button"
+                >
                   練習開始
                 </button>
               </div>
@@ -296,7 +332,12 @@
 
             <div class="start-row">
               <p id="practiceAvailability" class="status-text"></p>
-              <button id="startPractice" class="primary large practice-start-button">練習開始</button>
+              <button
+                id="startPractice"
+                class="primary large practice-start-button"
+              >
+                練習開始
+              </button>
             </div>
           </div>
 
@@ -373,6 +414,246 @@
           </div>
         </section>
 
+        <section id="screen-experiment" class="screen">
+          <div id="spellSetup" class="card spell-training-setup">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Experiment / Spell Training</p>
+                <h2>スペル特訓 <span class="pill">β</span></h2>
+                <p class="note">
+                  2〜4文字の短い英単語を、画面内キーボードで最初から最後まで入力する実験機能です。2文字は短いフレーズの穴埋め、3・4文字は日本語からのスペル回答を中心に出題します。通常の練習とは独立しており、通常のスコア履歴・単語ごとの学習進捗・復習とは分けて動きます。結果は「スペル特訓履歴」に保存します。
+                </p>
+              </div>
+            </div>
+
+            <div class="spell-training-settings">
+              <label class="spell-length-field">
+                <span>文字数</span>
+                <select id="spellLength" aria-label="スペル特訓の文字数">
+                  <option value="2">2文字</option>
+                  <option value="3" selected>3文字</option>
+                  <option value="4">4文字</option>
+                </select>
+              </label>
+              <label class="spell-length-field">
+                <span>問題数</span>
+                <select id="spellQuestionCount" aria-label="スペル特訓の問題数">
+                  <option value="5">5問</option>
+                  <option value="10" selected>10問</option>
+                  <option value="20">20問</option>
+                  <option value="30">30問</option>
+                  <option value="50">50問</option>
+                </select>
+              </label>
+              <div class="spell-available-panel" aria-live="polite">
+                <span>現在の対象</span>
+                <strong id="spellAvailableCount">0語</strong>
+              </div>
+              <button id="startSpellTraining" class="primary" type="button">
+                スペル特訓を始める
+              </button>
+            </div>
+            <p
+              id="spellAvailabilityNote"
+              class="note spell-availability-note"
+            ></p>
+            <div class="beta-note spell-beta-note">
+              <strong>入力について</strong>
+              <p>
+                練習開始後は、画面内のA〜Zキーボードをタップ・クリックして入力します。OSのソフトウェアキーボードは使わず、英字以外は入力できません。Aaキーで大文字・小文字を切り替えられますが、正解判定では大文字・小文字を区別しません。似た意味の同じ文字数の語がある場合は、「capではない表現」のような補助ヒントを表示して、今回答える単語を区別します。
+              </p>
+            </div>
+          </div>
+
+          <div id="spellQuizArea" class="card spell-quiz-card hidden">
+            <div class="quiz-top spell-quiz-top">
+              <div>
+                <span class="pill">スペル特訓 β</span>
+                <span id="spellQuizProgress">1 / 10</span>
+              </div>
+              <div class="spell-quiz-top-actions">
+                <div class="score-mini">
+                  正解 <strong id="spellQuizCorrect">0</strong>
+                </div>
+                <button
+                  id="spellBackToSetup"
+                  class="secondary spell-setup-mini"
+                  type="button"
+                >
+                  設定
+                </button>
+              </div>
+            </div>
+            <div class="progress-track">
+              <div id="spellProgressBar" class="spell-progress-bar"></div>
+            </div>
+
+            <div class="spell-question-area">
+              <p id="spellQuestionLead">この日本語を英語で書くと？</p>
+              <div id="spellPhrasePrompt" class="spell-phrase-prompt hidden">
+                —
+              </div>
+              <div id="spellJapanesePrompt" class="spell-japanese-prompt">
+                —
+              </div>
+              <div
+                id="spellRelationHint"
+                class="spell-relation-hint hidden"
+                aria-label="関連する言葉"
+              ></div>
+              <div
+                id="spellDisambiguationHint"
+                class="spell-disambiguation-hint hidden"
+              ></div>
+              <span id="spellQuestionLength" class="count-chip">3文字</span>
+            </div>
+
+            <form
+              id="spellAnswerForm"
+              class="spell-answer-form"
+              autocomplete="off"
+            >
+              <label for="spellAnswerInput">スペルを全部入力</label>
+              <div class="spell-answer-display-wrap">
+                <input
+                  id="spellAnswerInput"
+                  type="text"
+                  inputmode="none"
+                  autocomplete="off"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  spellcheck="false"
+                  readonly
+                  aria-readonly="true"
+                  aria-describedby="spellInputHint"
+                />
+                <span
+                  id="spellInputCount"
+                  class="spell-input-count"
+                  aria-live="polite"
+                  >0 / 3</span
+                >
+              </div>
+              <span id="spellInputHint" class="note"
+                >下の英字キーボードをタップ・クリックして入力してください。英字以外は入りません。</span
+              >
+
+              <div
+                id="spellOnscreenKeyboard"
+                class="spell-onscreen-keyboard"
+                aria-label="スペル特訓 英字キーボード"
+              >
+                <div
+                  class="spell-key-row spell-key-row-10"
+                  data-spell-key-row="qwertyuiop"
+                ></div>
+                <div
+                  class="spell-key-row spell-key-row-9"
+                  data-spell-key-row="asdfghjkl"
+                ></div>
+                <div class="spell-key-row spell-key-row-bottom">
+                  <button
+                    id="spellCaseToggle"
+                    class="spell-key spell-key-action"
+                    type="button"
+                    aria-label="大文字小文字を切り替える"
+                  >
+                    Aa
+                  </button>
+                  <div
+                    class="spell-key-letter-group"
+                    data-spell-key-row="zxcvbnm"
+                  ></div>
+                  <button
+                    id="spellBackspace"
+                    class="spell-key spell-key-action"
+                    type="button"
+                    aria-label="1文字消す"
+                  >
+                    ⌫
+                  </button>
+                </div>
+                <div class="spell-key-actions">
+                  <button id="spellClearInput" class="secondary" type="button">
+                    クリア
+                  </button>
+                  <button id="spellSubmitAnswer" class="primary" type="submit">
+                    答える
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <div id="spellFeedback" class="feedback" aria-live="polite"></div>
+            <div id="spellAnswerReveal" class="spell-answer-reveal hidden">
+              <div class="spell-answer-summary">
+                <span>答え</span>
+                <strong id="spellCorrectAnswer">—</strong>
+              </div>
+              <button id="spellSpeakAnswer" class="secondary" type="button">
+                発音を聞く
+              </button>
+              <button
+                id="spellNextQuestion"
+                class="primary hidden"
+                type="button"
+              >
+                次の問題
+              </button>
+            </div>
+          </div>
+
+          <div id="spellResultArea" class="card hidden">
+            <p class="eyebrow">Experiment Result</p>
+            <h2>スペル特訓の結果</h2>
+            <div class="result-score">
+              <strong id="spellResultPercent">0%</strong>
+              <span id="spellResultCount">0 / 0 問正解</span>
+            </div>
+            <p class="note center-text">
+              この結果は「スペル特訓履歴」に保存します。通常の単語進捗・復習とは分けて扱います。
+            </p>
+            <div
+              id="spellSecretUnlockNotice"
+              class="achievement-unlock-notice hidden"
+              aria-live="polite"
+            ></div>
+            <div class="inline-actions center result-actions">
+              <button id="spellRetry" class="primary" type="button">
+                同じ設定でもう一度
+              </button>
+              <button id="spellResultBack" class="secondary" type="button">
+                設定を選び直す
+              </button>
+            </div>
+            <section
+              class="result-review"
+              aria-labelledby="spellResultReviewTitle"
+            >
+              <div class="result-review-heading">
+                <div>
+                  <h3 id="spellResultReviewTitle">問題と解答</h3>
+                  <p class="note">
+                    出題された問題と、自分の答え・正しい答えを振り返れます。
+                  </p>
+                </div>
+                <label class="review-filter">
+                  表示
+                  <select id="spellResultReviewFilter">
+                    <option value="all">すべて</option>
+                    <option value="wrong">間違えた問題だけ</option>
+                    <option value="correct">正解した問題だけ</option>
+                  </select>
+                </label>
+              </div>
+              <div id="spellResultAnswerList" class="result-answer-list"></div>
+              <p id="spellResultAnswerEmpty" class="empty-message hidden">
+                条件に合う問題はありません。
+              </p>
+            </section>
+          </div>
+        </section>
+
         <section id="screen-words" class="screen">
           <details class="card my-words-register">
             <summary class="my-words-summary">
@@ -380,50 +661,52 @@
                 <span class="eyebrow">My Words</span>
                 <span class="my-words-title">あなたの単語</span>
               </span>
-              <span class="my-words-summary-note">プリセット以外の単語を自分で登録できます。</span>
+              <span class="my-words-summary-note"
+                >プリセット以外の単語を自分で登録できます。</span
+              >
             </summary>
             <div class="my-words-register-body">
-            <div class="register-grid">
-              <label
-                >英単語<input
-                  id="customEnglish"
-                  type="text"
-                  maxlength="40"
-                  placeholder="例：rainbow"
-                  autocomplete="off"
-              /></label>
-              <label
-                >日本語<input
-                  id="customJapanese"
-                  type="text"
-                  maxlength="60"
-                  placeholder="例：虹"
-              /></label>
-              <label
-                >同義語・言い換え（任意）<input
-                  id="customSynonyms"
-                  type="text"
-                  maxlength="160"
-                  placeholder="例：colour, hue"
-                  autocomplete="off"
-              /></label>
-              <label
-                >カテゴリ
-                <select id="customTopic"></select>
-              </label>
-            </div>
-            <div class="inline-actions">
-              <button id="previewCustom" class="secondary">音声を確認</button>
-              <button id="addCustom" class="primary">登録</button>
-              <span
-                id="customMessage"
-                class="status-text"
-                aria-live="polite"
-              ></span>
-            </div>
-            <p class="note">
-              日本語の自動取得には外部辞書APIを使わず、正確性と利用規約管理のため利用者入力としています。同義語・言い換えはカンマ区切りで複数登録できます。登録時は各表現に独立した単語IDを付け、同義語グループとして関連づけます。
-            </p>
+              <div class="register-grid">
+                <label
+                  >英単語<input
+                    id="customEnglish"
+                    type="text"
+                    maxlength="40"
+                    placeholder="例：rainbow"
+                    autocomplete="off"
+                /></label>
+                <label
+                  >日本語<input
+                    id="customJapanese"
+                    type="text"
+                    maxlength="60"
+                    placeholder="例：虹"
+                /></label>
+                <label
+                  >同義語・言い換え（任意）<input
+                    id="customSynonyms"
+                    type="text"
+                    maxlength="160"
+                    placeholder="例：colour, hue"
+                    autocomplete="off"
+                /></label>
+                <label
+                  >カテゴリ
+                  <select id="customTopic"></select>
+                </label>
+              </div>
+              <div class="inline-actions">
+                <button id="previewCustom" class="secondary">音声を確認</button>
+                <button id="addCustom" class="primary">登録</button>
+                <span
+                  id="customMessage"
+                  class="status-text"
+                  aria-live="polite"
+                ></span>
+              </div>
+              <p class="note">
+                日本語の自動取得には外部辞書APIを使わず、正確性と利用規約管理のため利用者入力としています。同義語・言い換えはカンマ区切りで複数登録できます。登録時は各表現に独立した単語IDを付け、同義語グループとして関連づけます。
+              </p>
             </div>
           </details>
 
@@ -452,7 +735,15 @@
                     type="search"
                     placeholder="英単語・関連語・日本語で検索"
                   />
-                  <button id="voiceSearch" class="secondary voice-search-button" type="button" aria-describedby="voiceSearchStatus" title="試験的な音声入力による検索">音声検索 <span class="beta-mark">β</span></button>
+                  <button
+                    id="voiceSearch"
+                    class="secondary voice-search-button"
+                    type="button"
+                    aria-describedby="voiceSearchStatus"
+                    title="試験的な音声入力による検索"
+                  >
+                    音声検索 <span class="beta-mark">β</span>
+                  </button>
                 </div>
               </div>
               <label
@@ -501,10 +792,14 @@
               </label>
             </div>
             <div class="voice-search-info">
-              <p id="voiceSearchStatus" class="status-text" aria-live="polite">音声検索（β）は、気になったときに試せる補助機能です。</p>
+              <p id="voiceSearchStatus" class="status-text" aria-live="polite">
+                音声検索（β）は、気になったときに試せる補助機能です。
+              </p>
               <details class="voice-search-help">
                 <summary>音声検索（β）について</summary>
-                <p class="note">端末・ブラウザ・マイクが認識した英語を、そのまま検索欄へ入力して検索する試験的な機能です。認識結果が想定した単語と異なることがありますが、発音の正確さ・発音品質・英語力を判定するものではありません。マイクの利用許可が必要で、ブラウザの音声認識方式によってはインターネット接続が必要です。利用できない環境でも、通常のキーボード検索や練習機能には影響しません。</p>
+                <p class="note">
+                  端末・ブラウザ・マイクが認識した英語を、そのまま検索欄へ入力して検索する試験的な機能です。認識結果が想定した単語と異なることがありますが、発音の正確さ・発音品質・英語力を判定するものではありません。マイクの利用許可が必要で、ブラウザの音声認識方式によってはインターネット接続が必要です。利用できない環境でも、通常のキーボード検索や練習機能には影響しません。
+                </p>
               </details>
             </div>
             <p class="note synonym-note">
@@ -572,11 +867,17 @@
                 <p class="eyebrow">Achievements</p>
                 <div class="achievement-title-row">
                   <h2>バッジ・実績</h2>
-                  <span id="achievementHeaderProgress" class="achievement-header-progress" aria-live="polite"></span>
+                  <span
+                    id="achievementHeaderProgress"
+                    class="achievement-header-progress"
+                    aria-live="polite"
+                  ></span>
                 </div>
               </div>
               <div class="inline-actions">
-                <button id="resetLearningProgress" class="danger-outline">バッジ・挑戦状況をリセット</button>
+                <button id="resetLearningProgress" class="danger-outline">
+                  バッジ・挑戦状況をリセット
+                </button>
               </div>
             </div>
             <p class="note">
@@ -598,51 +899,137 @@
                 <h2>学習データの端末間連携</h2>
               </div>
               <div class="inline-actions">
-                <button id="exportLearningData" class="secondary">学習データを出力</button>
-                <button id="importLearningData" class="secondary">マージ読込</button>
-                <input id="importLearningDataFile" type="file" accept=".json,application/json" hidden />
+                <button id="exportLearningData" class="secondary">
+                  学習データを出力
+                </button>
+                <button id="importLearningData" class="secondary">
+                  マージ読込
+                </button>
+                <input
+                  id="importLearningDataFile"
+                  type="file"
+                  accept=".json,application/json"
+                  hidden
+                />
               </div>
             </div>
             <p class="note">
-              JSONには、スコア履歴、バッジ累計、単語ごとの挑戦・正解・復習状況、同義語グループを含む「あなたの単語」、出題OFF設定を保存します。別端末で読み込むと、端末ごとの累計と時刻情報を使ってマージし、同じデータの再読込は二重加算しないように扱います。画面テーマと音声設定は端末ごとの設定として含めません。
+              JSONには、通常のスコア履歴、スペル特訓履歴、バッジ累計、単語ごとの挑戦・正解・復習状況、同義語グループを含む「あなたの単語」、出題OFF設定を保存します。別端末で読み込むと、端末ごとの累計と時刻情報を使ってマージし、同じデータの再読込は二重加算しないように扱います。画面テーマと音声設定は端末ごとの設定として含めません。
             </p>
-            <p id="learningDataMessage" class="note data-message">複数端末で使う場合は、それぞれの端末から出力したJSONを順番にマージできます。</p>
+            <p id="learningDataMessage" class="note data-message">
+              複数端末で使う場合は、それぞれの端末から出力したJSONを順番にマージできます。
+            </p>
           </div>
 
-          <div class="card">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Score History</p>
-                <h2>スコア履歴</h2>
+          <details class="card history-details">
+            <summary class="history-summary">
+              <span>
+                <span class="eyebrow">Score History</span>
+                <strong>スコア履歴</strong>
+              </span>
+              <span class="history-summary-count"
+                ><span id="scoreHistorySummaryCount">0件</span></span
+              >
+            </summary>
+            <div class="history-details-body">
+              <div class="section-heading history-actions-heading">
+                <p class="note">
+                  通常の「読み・書き・リスニング」練習の結果です。
+                </p>
+                <div class="inline-actions">
+                  <button id="exportHistory" class="secondary">CSV出力</button>
+                  <button id="deleteAllHistory" class="danger-outline">
+                    すべて削除
+                  </button>
+                </div>
               </div>
-              <div class="inline-actions">
-                <button id="exportHistory" class="secondary">CSV出力</button>
-                <button id="deleteAllHistory" class="danger-outline">
-                  すべて削除
-                </button>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>日時</th>
+                      <th>出題数</th>
+                      <th>正解</th>
+                      <th>正答率</th>
+                      <th>読み</th>
+                      <th>書き</th>
+                      <th>リスニング</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="historyTableBody"></tbody>
+                </table>
+              </div>
+              <p id="historyEmpty" class="empty-message hidden">
+                履歴はまだありません。
+              </p>
+            </div>
+          </details>
+
+          <details class="card history-details">
+            <summary class="history-summary">
+              <span>
+                <span class="eyebrow">Spell Training History</span>
+                <strong>スペル特訓履歴</strong>
+              </span>
+              <span class="history-summary-count"
+                ><span id="spellHistorySummaryCount">0件</span></span
+              >
+            </summary>
+            <div class="history-details-body">
+              <div class="section-heading history-actions-heading">
+                <p class="note">
+                  「実験 / スペル特訓
+                  β」の結果だけを保存します。通常の単語進捗や復習とは分けて管理します。
+                </p>
+                <div class="inline-actions">
+                  <button id="exportSpellHistory" class="secondary">
+                    CSV出力
+                  </button>
+                  <button id="deleteAllSpellHistory" class="danger-outline">
+                    すべて削除
+                  </button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>日時</th>
+                      <th>文字数</th>
+                      <th>出題数</th>
+                      <th>正解</th>
+                      <th>正答率</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="spellHistoryTableBody"></tbody>
+                </table>
+              </div>
+              <p id="spellHistoryEmpty" class="empty-message hidden">
+                スペル特訓の履歴はまだありません。
+              </p>
+              <div id="spellHistoryReview" class="spell-history-review hidden">
+                <div class="result-review-heading">
+                  <div>
+                    <h3 id="spellHistoryReviewTitle">スペル特訓の振り返り</h3>
+                    <p id="spellHistoryReviewMeta" class="note"></p>
+                  </div>
+                  <button
+                    id="closeSpellHistoryReview"
+                    class="secondary"
+                    type="button"
+                  >
+                    閉じる
+                  </button>
+                </div>
+                <div
+                  id="spellHistoryAnswerList"
+                  class="result-answer-list"
+                ></div>
               </div>
             </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>日時</th>
-                    <th>出題数</th>
-                    <th>正解</th>
-                    <th>正答率</th>
-                    <th>読み</th>
-                    <th>書き</th>
-                    <th>リスニング</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody id="historyTableBody"></tbody>
-              </table>
-            </div>
-            <p id="historyEmpty" class="empty-message hidden">
-              履歴はまだありません。
-            </p>
-          </div>
+          </details>
         </section>
 
         <section id="screen-help" class="screen">
@@ -677,9 +1064,15 @@
             <p>
               バッジ画面には「？？？」の実績もあります。条件と進み具合がヒントです。いろいろな単語に出会って、間違えた単語も復習しながら、何が隠れているか見つけてみてください。全部を急いで集めなくても大丈夫です。いつもの練習を続けた結果として少しずつ増えていきます。
             </p>
-            <h3>6. 保存・端末間連携について</h3>
+            <h3>6. 実験 / スペル特訓（β）</h3>
             <p>
-              「あなたの単語」、出題設定、画面テーマ、スコア履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの localStorage に保存します。ブラウザデータを消去すると失われます。「履歴」タブの学習データ出力では、履歴・挑戦状況・バッジ実績などをJSONに保存し、別端末では「マージ読込」で統合できます。同じ端末データを再読込しても、端末別の累計を基準に二重加算しないようにしています。
+              「実験」タブでは、2〜4文字の短い英単語を最初から最後まで入力するスペル特訓を試せます。2文字はフレーズの空欄を埋める形式を使い、正解後は単語だけでなく完成したフレーズ全体の音を聞けます。3・4文字では紛らわしい言い換えがある場合に補助ヒントを表示します。文字数と問題数を選択でき、一問ごとに答えを確認できます。問題文は小学生が読みやすい表記を優先しています。この実験機能の結果は専用の「スペル特訓履歴」に保存し、いつものスコア履歴・単語ごとの学習進捗・復習・通常の練習集計とは分けて扱います。
+            </p>
+            <h3>7. 保存・端末間連携について</h3>
+            <p>
+              「あなたの単語」、出題設定、画面テーマ、通常のスコア履歴、スペル特訓履歴、単語ごとの学習進捗、バッジ実績は、このブラウザの
+              localStorage
+              に保存します。ブラウザデータを消去すると失われます。「履歴」タブの学習データ出力では、履歴・挑戦状況・バッジ実績などをJSONに保存し、別端末では「マージ読込」で統合できます。同じ端末データを再読込しても、端末別の累計を基準に二重加算しないようにしています。
             </p>
           </div>
         </section>
@@ -692,6 +1085,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=026"></script>
+    <script src="app.js?v=032"></script>
   </body>
 </html>

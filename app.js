@@ -1,13 +1,14 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "025";
+  const APP_VERSION = "033";
   const DATA_SCHEMA_VERSION = 2;
 
   const STORAGE = {
     custom: "ewp_custom_words_v1",
     disabled: "ewp_disabled_words_v1",
     history: "ewp_score_history_v1",
+    spellHistory: "ewp_spell_training_history_v1",
     theme: "ewp_theme_v1",
     voice: "ewp_voice_v1",
     wordProgress: "ewp_word_progress_v1",
@@ -40,6 +41,7 @@
     mediaEntertainment: "娯楽・メディア",
     leisureEvents: "行事・レジャー",
     generalWords: "基本・汎用語",
+    grammarBasics: "文法・基本語",
     buildings: "建物・場所",
     clothing: "衣服",
     transportation: "交通",
@@ -862,7 +864,32 @@
     ["comic book","漫画","mediaEntertainment"],
     ["wheel","車輪","transportation"],
     ["pedal","ペダル","transportation"],
-    ["brake","ブレーキ","transportation"]
+    ["brake","ブレーキ","transportation"],
+    ["am","～です・～である（Iと使う）","grammarBasics"],
+    ["an","1つの・1人の（母音の前）","grammarBasics"],
+    ["as","～として・～のように","grammarBasics"],
+    ["at","～で・～に（地点・時刻）","grammarBasics"],
+    ["be","～である・いる（原形）","grammarBasics"],
+    ["by","～で・～によって・～までに","grammarBasics"],
+    ["do","する","dailyActions"],
+    ["go","行く","dailyActions"],
+    ["he","彼","grammarBasics"],
+    ["hi","やあ・こんにちは","generalWords"],
+    ["if","もし～なら","grammarBasics"],
+    ["in","～の中に・～で","grammarBasics"],
+    ["is","～です・～である（he / she / itなどと使う）","grammarBasics"],
+    ["it","それ・それは","grammarBasics"],
+    ["me","私を・私に","grammarBasics"],
+    ["my","私の","grammarBasics"],
+    ["no","いいえ・ない","generalWords"],
+    ["of","～の","grammarBasics"],
+    ["oh","おお・ああ","generalWords"],
+    ["on","～の上に・～に（接して）","grammarBasics"],
+    ["or","または・それとも","grammarBasics"],
+    ["so","だから・とても","grammarBasics"],
+    ["to","～へ・～に","grammarBasics"],
+    ["us","私たちを・私たちに","grammarBasics"],
+    ["we","私たちは・私たちが","grammarBasics"]
   ].map((w, i) => ({ id:`p${i+1}`, english:w[0], japanese:w[1], topic:w[2], source:"preset" }));
 
   // v019: 英語表現はすべて独立した単語IDを持つ。
@@ -1017,6 +1044,7 @@
   let homeRandomWordId = "";
   let disabledIds = new Set(load(STORAGE.disabled, []));
   let history = load(STORAGE.history, []);
+  let spellHistory = load(STORAGE.spellHistory, []);
   let wordProgress = load(STORAGE.wordProgress, {});
   let learningStats = load(STORAGE.learningStats, null);
   let achievements = load(STORAGE.achievements, {});
@@ -1845,6 +1873,21 @@
     return announce ? newlyUnlocked : [];
   }
 
+  function unlockSpellTrainingSecretAchievement() {
+    const id = "secret_spell_challenger";
+    if (achievements[id]) return null;
+
+    const now = new Date().toISOString();
+    achievements[id] = now;
+    save(STORAGE.achievements, achievements);
+    return {
+      id,
+      title: "スペルチャレンジャー",
+      tier: { material:"blue-deep", size:"large", label:"シークレット" },
+      secret: true
+    };
+  }
+
   function updateLearningStatsFromQuiz(percent) {
     const source = currentSyncSource();
     source.sessions = normalizeSyncSessions(source.sessions);
@@ -1897,6 +1940,8 @@
     validAchievementIds.add("secret_synonym_master");
     validAchievementIds.add("secret_antonym_master");
     validAchievementIds.add("secret_all_clear");
+    // この実績は未発見の間、総数にも含めない。初回のスペル特訓完了後だけ存在が見える。
+    if (achievements.secret_spell_challenger) validAchievementIds.add("secret_spell_challenger");
 
     return {
       unlocked: Object.keys(achievements).filter(id => validAchievementIds.has(id)).length,
@@ -1996,17 +2041,38 @@
     const antonymSecretUnlocked = achievements.secret_antonym_master;
     const secret = secretAchievementProgress();
     const secretUnlocked = achievements.secret_all_clear;
+    const spellSecretUnlocked = achievements.secret_spell_challenger;
+    const visibleSecretTotal = 3 + (spellSecretUnlocked ? 1 : 0);
+    const secretUnlockedCount = [synonymSecretUnlocked, antonymSecretUnlocked, secretUnlocked, spellSecretUnlocked].filter(Boolean).length;
 
-    const secretUnlockedCount = [synonymSecretUnlocked, antonymSecretUnlocked, secretUnlocked].filter(Boolean).length;
+    const spellSecretEntry = spellSecretUnlocked ? `
+      <div class="secret-achievement-entry">
+        <div class="secret-badge-layout">
+          ${badgeVisual({ material:"blue-deep", size:"large", label:"シークレット" }, false)}
+          <div>
+            <h3>スペルチャレンジャー獲得！</h3>
+            <p class="secret-condition">スペル特訓を1回、最後までやってみると解禁します。</p>
+            <strong>実験タブまで見つけて、スペルを自分の手で組み立てたね！</strong>
+            <span class="badge-message-en">You found the spell challenge!</span>
+            <div class="secret-progress-grid">
+              <span>スペル特訓に挑戦済み</span>
+              <span>獲得：${escapeHtml(formatDate(spellSecretUnlocked))}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ` : "";
+
     secretArea.innerHTML = `
       <details class="achievement-series-card secret-achievement-card">
         <summary>
           <div class="achievement-series-title">
             <strong>？？？</strong>
-            <span>獲得 ${secretUnlockedCount} / 3</span>
+            <span>獲得 ${secretUnlockedCount} / ${visibleSecretTotal}</span>
           </div>
         </summary>
         <div class="achievement-series-body secret-achievement-stack">
+          ${spellSecretEntry}
           <div class="secret-achievement-entry">
             <div class="secret-badge-layout">
               ${synonymSecretBadgeVisual(!synonymSecretUnlocked)}
@@ -2535,6 +2601,7 @@
     if (scroller) scroller.scrollTo({top:0, behavior:"smooth"});
     else window.scrollTo({top:0, behavior:"smooth"});
     if (name === "words") renderWords();
+    if (name === "experiment") updateSpellTrainingAvailability();
     if (name === "badges") renderBadges();
     if (name === "history") renderHistory();
     if (name === "home") renderHome();
@@ -2675,6 +2742,619 @@
     $("#retryPractice").addEventListener("click", () => startPractice(lastSettings, { trigger: "retry" }));
     $("#backToSetup").addEventListener("click", showSetup);
     $("#resultReviewFilter").addEventListener("change", renderResultAnswers);
+  }
+
+
+  // v029: 実験 / スペル特訓（β）
+  // 通常クイズとは独立し、専用のスペル特訓履歴を保存する。通常の単語進捗・復習・通常バッジの集計は更新しない。
+  // 2文字は、短い機能語を単独の日本語訳だけで問うと曖昧になりやすいため、原則としてフレーズ穴埋めで出題する。
+  let spellTraining = null;
+  let spellKeyboardUppercase = false;
+
+  const SPELL_TWO_LETTER_CONTEXTS = {
+    am: { phrase:"I __ happy.", japanese:"私はうれしいです。" },
+    an: { phrase:"__ apple", japanese:"りんご1つ" },
+    as: { phrase:"work __ a team", japanese:"チームとして取り組む" },
+    at: { phrase:"get up __ 7:00", japanese:"7時に起きる" },
+    be: { phrase:"__ careful.", japanese:"気をつけて。" },
+    by: { phrase:"go __ bus", japanese:"バスで行く" },
+    do: { phrase:"__ my homework", japanese:"宿題をする" },
+    go: { phrase:"__ home", japanese:"家に帰る" },
+    he: { phrase:"__ is my brother.", japanese:"その男の子は私のきょうだいです。" },
+    hi: { phrase:"say \"__!\"", japanese:"「やあ！」と言う" },
+    if: { phrase:"__ it rains", japanese:"もし雨がふったら" },
+    in: { phrase:"__ the box", japanese:"箱の中に" },
+    is: { phrase:"This __ a pen.", japanese:"これはペンです。" },
+    it: { phrase:"__ is sunny.", japanese:"晴れています。" },
+    me: { phrase:"Help __.", japanese:"私を助けて。" },
+    my: { phrase:"__ book", japanese:"私の本" },
+    no: { phrase:"__ problem.", japanese:"問題ありません。" },
+    of: { phrase:"a cup __ tea", japanese:"1杯のお茶" },
+    oh: { phrase:"\"__! I see.\"", japanese:"「ああ！分かった。」" },
+    on: { phrase:"__ the desk", japanese:"机の上に" },
+    or: { phrase:"tea __ milk", japanese:"お茶、それとも牛乳" },
+    so: { phrase:"__ happy", japanese:"とてもうれしい" },
+    to: { phrase:"go __ school", japanese:"学校へ行く" },
+    up: { phrase:"stand __", japanese:"立ち上がる" },
+    us: { phrase:"Help __.", japanese:"私たちを助けて。" },
+    we: { phrase:"__ are friends.", japanese:"私たちは友達です。" },
+    tv: { phrase:"watch __", japanese:"テレビを見る" }
+  };
+
+
+  // v030: スペル特訓の問題文は、小学生が「英語のつづり」に集中しやすいよう、
+  // 難しい漢字・読みづらい表記だけを画面表示用にやさしくする。
+  // 元の単語データは変えないため、通常クイズ・一覧・既存データとの互換性には影響しない。
+  const SPELL_CHILD_FRIENDLY_JAPANESE = {
+    // 読みだけをひらがなにすると別の語に見えるものは、漢字＋読みで意味を限定する。
+    egg:"卵（たまご）",
+    rice:"ごはん",
+    vet:"動物のおいしゃさん",
+    pig:"豚（ぶた）",
+    arm:"腕（うで）",
+    leg:"脚（あし）",
+    dry:"かわいた",
+    shy:"はずかしがりの",
+    key:"鍵（かぎ）",
+    hop:"ぴょんと とぶ",
+    sit:"すわる",
+    pink:"もも色",
+    wife:"妻（つま）",
+    judo:"じゅうどう",
+    warm:"あたたかい",
+    cool:"すずしい",
+    glad:"うれしい",
+    gray:"灰色（はいいろ）",
+    grey:"灰色（はいいろ）",
+    navy:"紺色（こんいろ）",
+    bear:"熊（くま）",
+    hair:"髪（かみ）",
+    nose:"鼻（はな）",
+    lake:"湖（みずうみ）",
+    hard:"かたい・むずかしい",
+    thin:"うすい・細い（ほそい）",
+    easy:"かんたんな",
+    slow:"おそい",
+    late:"おそく・おそい",
+    cave:"洞くつ（どうくつ）",
+    back:"背中（せなか）",
+    bowl:"ボウル・うつわ",
+    draw:"絵をかく",
+    oval:"だ円の形",
+    tall:"背が高い（せがたかい）",
+    sign:"標識（ひょうしき）・看板（かんばん）",
+    hurt:"きずつける・いたむ",
+    pass:"手わたす",
+    cafe:"おちゃを飲む店",
+    dish:"皿（さら）",
+    pork:"ぶた肉",
+    lips:"唇（くちびる）",
+    soft:"やわらかい"
+  };
+
+  // スペルだけを見たとき特に取り違えやすい近い語。通常クイズの選択肢ルールには影響させない。
+  const SPELL_NEAR_WORD_HINTS = {
+    hat: ["cap"],
+    cap: ["hat"]
+  };
+
+  function normalizeSpellAnswer(value) {
+    return String(value || "").normalize("NFKC").trim().toLowerCase();
+  }
+
+  function spellEligibleWords(length) {
+    const targetLength = Number(length);
+    return allWords().filter(word => {
+      const english = String(word?.english || "").trim();
+      return isEnabled(word)
+        && /^[A-Za-z]+$/.test(english)
+        && english.length === targetLength;
+    });
+  }
+
+  function spellDisambiguationInfo(word, length, eligibleWords) {
+    const targetLength = Number(length);
+    const englishKey = String(word?.english || "").trim().toLowerCase();
+    const alternatives = new Map();
+
+    // 同じ日本語で同じ文字数の別IDがある場合。
+    const japaneseKey = normalizedJapanese(word);
+    for (const other of eligibleWords) {
+      if (other.id === word.id || normalizedJapanese(other) !== japaneseKey) continue;
+      alternatives.set(String(other.english).toLowerCase(), { english:other.english, kind:"同じ日本語になる語" });
+    }
+
+    // 同義語・言い換え関係のうち、文字数だけでは区別できないもの。
+    const relationKind = synonymRelationKind(word) || "同義語・言い換え";
+    for (const other of linkedSynonymWords(word)) {
+      const form = String(other.english || "").trim();
+      if (/^[A-Za-z]+$/.test(form) && form.length === targetLength) {
+        alternatives.set(form.toLowerCase(), { english:form, kind:relationKind });
+      }
+    }
+
+    // hat / cap など、スペル特訓上だけ補助したい近い表現。
+    for (const form of SPELL_NEAR_WORD_HINTS[englishKey] || []) {
+      if (form.length === targetLength) alternatives.set(form.toLowerCase(), { english:form, kind:"似た言葉" });
+    }
+
+    alternatives.delete(englishKey);
+    const list = [...alternatives.values()];
+    if (!list.length) return null;
+    const kinds = [...new Set(list.map(item => item.kind))];
+    const label = kinds.length === 1 ? kinds[0] : "似た・同じ意味の語";
+    return {
+      label,
+      forms:list.map(item => item.english),
+      text:`${label}：${list.map(item => item.english).join(" / ")} ではない表現で回答してください。`
+    };
+  }
+
+  function spellRelationInfo(word) {
+    const items = [];
+    const synonyms = synonymFormsForDisplay(word);
+    if (synonyms.length) {
+      items.push({
+        label:synonymRelationKind(word) || "同義語・言い換え",
+        forms:synonyms
+      });
+    }
+
+    const antonyms = antonymFormsForDisplay(word);
+    if (antonyms.length) {
+      // スペル特訓では relation kind の細かな名称を出さず、学習者向けに統一して表示する。
+      items.push({
+        label:"対義語",
+        forms:antonyms
+      });
+    }
+    return items;
+  }
+
+  function spellQuestionItems(length) {
+    const eligibleWords = spellEligibleWords(length);
+    return eligibleWords.map(word => {
+      const english = String(word.english || "").trim();
+      const context = Number(length) === 2 ? SPELL_TWO_LETTER_CONTEXTS[english.toLowerCase()] || null : null;
+      return {
+        word,
+        japanese:SPELL_CHILD_FRIENDLY_JAPANESE[english.toLowerCase()] || word.japanese,
+        answer:english,
+        answers:[english],
+        context,
+        relations:spellRelationInfo(word),
+        disambiguation:spellDisambiguationInfo(word, length, eligibleWords)
+      };
+    });
+  }
+
+  function selectedSpellQuestionCount() {
+    return Math.max(1, Number($("#spellQuestionCount")?.value || 10));
+  }
+
+  function updateSpellTrainingAvailability() {
+    const lengthSelect = $("#spellLength");
+    const countEl = $("#spellAvailableCount");
+    const noteEl = $("#spellAvailabilityNote");
+    const startButton = $("#startSpellTraining");
+    if (!lengthSelect || !countEl || !noteEl || !startButton) return;
+
+    const length = Number(lengthSelect.value || 3);
+    const questions = spellQuestionItems(length);
+    const requested = selectedSpellQuestionCount();
+    const actual = Math.min(requested, questions.length);
+    countEl.textContent = `${questions.length}語`;
+    startButton.disabled = questions.length === 0;
+
+    if (!questions.length) {
+      noteEl.textContent = `${length}文字の出題対象はありません。「単語一覧」で出題ONの単語を確認してください。`;
+      return;
+    }
+
+    let note = `現在は${questions.length}語が対象です。設定した${requested}問のうち、${actual}問を重複なしで出題します。`;
+    if (questions.length < requested) note += " 対象語数が少ないため、今回はその件数だけ出題します。";
+    if (length === 2) note += " 2文字は、原則として短いフレーズの穴埋めで出題します。";
+    noteEl.textContent = note;
+  }
+
+  function updateSpellInputDisplay() {
+    const input = $("#spellAnswerInput");
+    const count = $("#spellInputCount");
+    if (!input || !count) return;
+    const max = spellTraining?.length || Number($("#spellLength")?.value || 3);
+    count.textContent = `${input.value.length} / ${max}`;
+  }
+
+  function setSpellKeyboardDisabled(disabled) {
+    $$("#spellOnscreenKeyboard button").forEach(button => {
+      button.disabled = Boolean(disabled);
+    });
+  }
+
+  function updateSpellKeyboardCase() {
+    const keyboard = $("#spellOnscreenKeyboard");
+    if (!keyboard) return;
+    $$("#spellOnscreenKeyboard .spell-key-letter").forEach(button => {
+      const base = String(button.dataset.letter || "").toLowerCase();
+      button.textContent = spellKeyboardUppercase ? base.toUpperCase() : base;
+      button.setAttribute("aria-label", `${button.textContent} を入力`);
+    });
+    const toggle = $("#spellCaseToggle");
+    if (toggle) {
+      toggle.classList.toggle("is-uppercase", spellKeyboardUppercase);
+      toggle.setAttribute("aria-pressed", spellKeyboardUppercase ? "true" : "false");
+      toggle.title = spellKeyboardUppercase ? "小文字へ切り替え" : "大文字へ切り替え";
+    }
+  }
+
+  function buildSpellKeyboard() {
+    const keyboard = $("#spellOnscreenKeyboard");
+    if (!keyboard || keyboard.dataset.built === "true") return;
+    $$("#spellOnscreenKeyboard [data-spell-key-row]").forEach(row => {
+      const letters = String(row.dataset.spellKeyRow || "");
+      row.innerHTML = "";
+      for (const letter of letters) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "spell-key spell-key-letter";
+        button.dataset.letter = letter;
+        row.appendChild(button);
+      }
+    });
+    keyboard.dataset.built = "true";
+    updateSpellKeyboardCase();
+  }
+
+  function appendSpellLetter(letter) {
+    if (!spellTraining || spellTraining.answered) return;
+    const input = $("#spellAnswerInput");
+    if (!input) return;
+    const max = spellTraining.length;
+    if (input.value.length >= max) return;
+    const base = String(letter || "").toLowerCase();
+    if (!/^[a-z]$/.test(base)) return;
+    input.value += spellKeyboardUppercase ? base.toUpperCase() : base;
+    updateSpellInputDisplay();
+  }
+
+  function removeSpellLetter() {
+    if (!spellTraining || spellTraining.answered) return;
+    const input = $("#spellAnswerInput");
+    if (!input) return;
+    input.value = input.value.slice(0, -1);
+    updateSpellInputDisplay();
+  }
+
+  function clearSpellInput() {
+    if (!spellTraining || spellTraining.answered) return;
+    const input = $("#spellAnswerInput");
+    if (!input) return;
+    input.value = "";
+    updateSpellInputDisplay();
+  }
+
+  function showSpellSetup() {
+    $("#spellQuizArea")?.classList.add("hidden");
+    $("#spellResultArea")?.classList.add("hidden");
+    $("#spellSetup")?.classList.remove("hidden");
+    const secretNotice = $("#spellSecretUnlockNotice");
+    if (secretNotice) {
+      secretNotice.textContent = "";
+      secretNotice.classList.add("hidden");
+    }
+    spellTraining = null;
+    updateSpellTrainingAvailability();
+  }
+
+  function startSpellTraining() {
+    const length = Number($("#spellLength")?.value || 3);
+    const requested = selectedSpellQuestionCount();
+    const questions = shuffle(spellQuestionItems(length));
+    if (!questions.length) {
+      updateSpellTrainingAvailability();
+      return;
+    }
+
+    spellTraining = {
+      length,
+      requestedCount:requested,
+      questions:questions.slice(0, Math.min(requested, questions.length)),
+      index:0,
+      correct:0,
+      answered:false,
+      speakForm:"",
+      answers:[],
+      savedToHistory:false
+    };
+    spellKeyboardUppercase = false;
+    updateSpellKeyboardCase();
+
+    $("#spellSetup")?.classList.add("hidden");
+    $("#spellResultArea")?.classList.add("hidden");
+    const quizArea = $("#spellQuizArea");
+    quizArea?.classList.remove("hidden");
+    quizArea?.classList.remove("is-answered");
+    renderSpellQuestion();
+    requestAnimationFrame(() => quizArea?.scrollIntoView({ block:"start", behavior:"smooth" }));
+  }
+
+  function renderSpellQuestion() {
+    if (!spellTraining) return;
+    const q = spellTraining.questions[spellTraining.index];
+    if (!q) return;
+
+    spellTraining.answered = false;
+    spellTraining.speakForm = "";
+    $("#spellQuizArea")?.classList.remove("is-answered");
+    $("#spellQuizProgress").textContent = `${spellTraining.index + 1} / ${spellTraining.questions.length}`;
+    $("#spellQuizCorrect").textContent = spellTraining.correct;
+    $("#spellProgressBar").style.width = `${(spellTraining.index / spellTraining.questions.length) * 100}%`;
+    $("#spellQuestionLength").textContent = `${spellTraining.length}文字`;
+
+    const lead = $("#spellQuestionLead");
+    const phrase = $("#spellPhrasePrompt");
+    const japanese = $("#spellJapanesePrompt");
+    if (q.context) {
+      lead.textContent = "□□ に入る2文字の英語は？";
+      phrase.textContent = q.context.phrase.replace(/__/g, "□□");
+      phrase.classList.remove("hidden");
+      japanese.textContent = q.context.japanese;
+      japanese.classList.add("spell-japanese-context");
+    } else {
+      lead.textContent = "この日本語を英語で書くと？";
+      phrase.textContent = "";
+      phrase.classList.add("hidden");
+      japanese.textContent = q.japanese;
+      japanese.classList.remove("spell-japanese-context");
+    }
+
+    const relationHint = $("#spellRelationHint");
+    if (q.relations?.length) {
+      relationHint.innerHTML = q.relations.map(item => `
+        <span class="spell-relation-chip">
+          <strong>${escapeHtml(item.label)}：</strong>${escapeHtml(item.forms.join(" / "))}
+        </span>`).join("");
+      relationHint.classList.remove("hidden");
+    } else {
+      relationHint.innerHTML = "";
+      relationHint.classList.add("hidden");
+    }
+
+    const disambiguation = $("#spellDisambiguationHint");
+    if (q.disambiguation) {
+      disambiguation.textContent = q.disambiguation.text;
+      disambiguation.classList.remove("hidden");
+    } else {
+      disambiguation.textContent = "";
+      disambiguation.classList.add("hidden");
+    }
+
+    const input = $("#spellAnswerInput");
+    input.value = "";
+    input.disabled = false;
+    input.readOnly = true;
+    input.maxLength = spellTraining.length;
+    input.setAttribute("aria-label", `${q.context?.japanese || q.japanese}を英語${spellTraining.length}文字で入力した結果`);
+    updateSpellInputDisplay();
+    setSpellKeyboardDisabled(false);
+
+    $("#spellSubmitAnswer").disabled = false;
+    $("#spellFeedback").textContent = "";
+    $("#spellFeedback").className = "feedback";
+    $("#spellAnswerReveal").classList.add("hidden");
+    $("#spellCorrectAnswer").textContent = "—";
+    const speakButton = $("#spellSpeakAnswer");
+    speakButton.disabled = true;
+    speakButton.textContent = q.context ? "フレーズを聞く" : "発音を聞く";
+    $("#spellNextQuestion").classList.add("hidden");
+  }
+
+  function answerSpellQuestion() {
+    if (!spellTraining || spellTraining.answered) return;
+    const q = spellTraining.questions[spellTraining.index];
+    const input = $("#spellAnswerInput");
+    const typed = normalizeSpellAnswer(input.value);
+    if (!typed) {
+      $("#spellFeedback").textContent = "英字キーボードでスペルを入力してから「答える」を押してください。";
+      $("#spellFeedback").className = "feedback bad";
+      return;
+    }
+
+    const correct = normalizeSpellAnswer(q.answer) === typed;
+    spellTraining.answered = true;
+    if (correct) spellTraining.correct++;
+    spellTraining.speakForm = q.context
+      ? q.context.phrase.replace(/__/g, q.answer)
+      : q.answer;
+    $("#spellQuizArea")?.classList.add("is-answered");
+
+    input.readOnly = true;
+    setSpellKeyboardDisabled(true);
+    $("#spellSubmitAnswer").disabled = true;
+    $("#spellQuizCorrect").textContent = spellTraining.correct;
+
+    const feedback = $("#spellFeedback");
+    if (correct) {
+      const meaning = q.context?.japanese || q.japanese;
+      feedback.textContent = `正解です！ ${q.answer} と書けました。意味：${meaning}`;
+      feedback.className = "feedback good";
+    } else {
+      feedback.textContent = "今回はちがいました。答えを確認して、音も聞いてみましょう。";
+      feedback.className = "feedback bad";
+    }
+
+    spellTraining.answers.push({
+      number: spellTraining.index + 1,
+      length: spellTraining.length,
+      isCorrect: correct,
+      userAnswer: input.value,
+      correctAnswer: q.answer,
+      japanese: q.context?.japanese || q.japanese,
+      phrase: q.context ? q.context.phrase.replace(/__/g, "□□") : "",
+      completedPhrase: q.context ? q.context.phrase.replace(/__/g, q.answer) : "",
+      disambiguation: q.disambiguation?.text || ""
+    });
+
+    $("#spellCorrectAnswer").textContent = q.answer;
+    $("#spellAnswerReveal").classList.remove("hidden");
+    $("#spellSpeakAnswer").disabled = !spellTraining.speakForm;
+
+    const nextButton = $("#spellNextQuestion");
+    nextButton.textContent = spellTraining.index + 1 >= spellTraining.questions.length
+      ? "結果を見る"
+      : "次の問題";
+    nextButton.classList.remove("hidden");
+  }
+
+  function nextSpellQuestion() {
+    if (!spellTraining || !spellTraining.answered) return;
+    if (spellTraining.index + 1 >= spellTraining.questions.length) {
+      showSpellResult();
+      return;
+    }
+    spellTraining.index++;
+    renderSpellQuestion();
+  }
+
+  function spellResultAnswerItemHtml(answer) {
+    const stateClass = answer.isCorrect ? "correct" : "wrong";
+    const stateLabel = answer.isCorrect ? "正解" : "不正解";
+    const questionTitle = answer.phrase
+      ? `${answer.phrase}（${answer.japanese}）`
+      : answer.japanese;
+    const detail = answer.phrase
+      ? `□□ に入る${answer.length}文字の英語`
+      : `${answer.length}文字の英単語を全部入力`;
+    return `<article class="result-answer-item ${stateClass}">
+      <div class="result-answer-number">Q${answer.number}<span class="result-status-mark ${stateClass}">${stateLabel}</span></div>
+      <div class="result-answer-question">
+        <strong>${escapeHtml(questionTitle)}</strong>
+        <span>${escapeHtml(detail)}</span>
+      </div>
+      <div class="result-answer-value ${answer.isCorrect ? "" : "user-wrong"}">
+        <span class="label">あなたの解答</span>
+        <strong>${escapeHtml(answer.userAnswer || "（未入力）")}</strong>
+      </div>
+      <div class="result-answer-value correct-answer">
+        <span class="label">正しい答え</span>
+        <strong>${escapeHtml(answer.correctAnswer)}</strong>
+      </div>
+    </article>`;
+  }
+
+  function renderSpellResultAnswers() {
+    const list = $("#spellResultAnswerList");
+    const empty = $("#spellResultAnswerEmpty");
+    if (!list || !empty || !spellTraining) return;
+    const filter = $("#spellResultReviewFilter")?.value || "all";
+    const answers = (spellTraining.answers || []).filter(answer => {
+      if (filter === "wrong") return !answer.isCorrect;
+      if (filter === "correct") return answer.isCorrect;
+      return true;
+    });
+    list.innerHTML = answers.map(spellResultAnswerItemHtml).join("");
+    empty.classList.toggle("hidden", answers.length > 0);
+  }
+
+  function saveSpellTrainingHistory() {
+    if (!spellTraining || spellTraining.savedToHistory) return;
+    const total = spellTraining.questions.length;
+    const percent = total ? Math.round((spellTraining.correct / total) * 100) : 0;
+    spellHistory.unshift({
+      id:`sh${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+      date:new Date().toISOString(),
+      length:spellTraining.length,
+      requestedCount:spellTraining.requestedCount,
+      total,
+      correct:spellTraining.correct,
+      percent,
+      answers:(spellTraining.answers || []).map(answer => ({...answer}))
+    });
+    spellTraining.savedToHistory = true;
+    save(STORAGE.spellHistory, spellHistory);
+  }
+
+  function showSpellResult() {
+    if (!spellTraining) return;
+    const total = spellTraining.questions.length;
+    const percent = total ? Math.round((spellTraining.correct / total) * 100) : 0;
+    saveSpellTrainingHistory();
+    const spellSecret = unlockSpellTrainingSecretAchievement();
+    $("#spellProgressBar").style.width = "100%";
+    $("#spellQuizArea")?.classList.add("hidden");
+    $("#spellSetup")?.classList.add("hidden");
+    $("#spellResultArea")?.classList.remove("hidden");
+    $("#spellResultPercent").textContent = `${percent}%`;
+    $("#spellResultCount").textContent = `${spellTraining.correct} / ${total} 問正解`;
+    const secretNotice = $("#spellSecretUnlockNotice");
+    if (secretNotice) {
+      if (spellSecret) {
+        secretNotice.innerHTML = `🎉 シークレット実績を発見！<br>${escapeHtml(spellSecret.title)}`;
+        secretNotice.classList.remove("hidden");
+      } else {
+        secretNotice.textContent = "";
+        secretNotice.classList.add("hidden");
+      }
+    }
+    if ($("#spellResultReviewFilter")) $("#spellResultReviewFilter").value = "all";
+    renderSpellResultAnswers();
+    renderHistory();
+    renderHome();
+    renderBadges();
+  }
+
+  function initSpellTraining() {
+    const lengthSelect = $("#spellLength");
+    const countSelect = $("#spellQuestionCount");
+    if (!lengthSelect) return;
+    buildSpellKeyboard();
+    [lengthSelect, countSelect].filter(Boolean).forEach(select => select.addEventListener("change", () => {
+      updateSpellTrainingAvailability();
+      updateSpellInputDisplay();
+    }));
+    $("#startSpellTraining")?.addEventListener("click", startSpellTraining);
+    $("#spellAnswerForm")?.addEventListener("submit", event => {
+      event.preventDefault();
+      answerSpellQuestion();
+    });
+    $("#spellOnscreenKeyboard")?.addEventListener("click", event => {
+      const letterButton = event.target.closest(".spell-key-letter");
+      if (letterButton) appendSpellLetter(letterButton.dataset.letter);
+    });
+    $("#spellCaseToggle")?.addEventListener("click", () => {
+      if (!spellTraining || spellTraining.answered) return;
+      spellKeyboardUppercase = !spellKeyboardUppercase;
+      updateSpellKeyboardCase();
+    });
+    $("#spellBackspace")?.addEventListener("click", removeSpellLetter);
+    $("#spellClearInput")?.addEventListener("click", clearSpellInput);
+    $("#spellSpeakAnswer")?.addEventListener("click", () => {
+      if (spellTraining?.speakForm) speak(spellTraining.speakForm);
+    });
+    $("#spellNextQuestion")?.addEventListener("click", nextSpellQuestion);
+    $("#spellBackToSetup")?.addEventListener("click", showSpellSetup);
+    $("#spellResultBack")?.addEventListener("click", showSpellSetup);
+    $("#spellRetry")?.addEventListener("click", startSpellTraining);
+    $("#spellResultReviewFilter")?.addEventListener("change", renderSpellResultAnswers);
+
+    // PCでは物理キーボードも補助入力として利用可。A-Z以外は受け付けない。
+    document.addEventListener("keydown", event => {
+      if (!spellTraining || spellTraining.answered || $("#screen-experiment")?.classList.contains("active") === false) return;
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (["select", "textarea"].includes(tag)) return;
+      if (/^[a-zA-Z]$/.test(event.key)) {
+        event.preventDefault();
+        appendSpellLetter(event.key);
+      } else if (event.key === "Backspace") {
+        event.preventDefault();
+        removeSpellLetter();
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        answerSpellQuestion();
+      }
+    });
+    updateSpellTrainingAvailability();
+    updateSpellInputDisplay();
   }
 
   function getSettings() {
@@ -3513,6 +4193,7 @@
         customWords,
         disabledIds: [...disabledIds],
         history,
+        spellHistory,
         achievements,
         sync: {
           schemaVersion: DATA_SCHEMA_VERSION,
@@ -3740,6 +4421,16 @@
     }
     history.sort((a,b) => String(b.date || "").localeCompare(String(a.date || "")));
 
+    const existingSpellHistoryIds = new Set(spellHistory.map(item => item.id));
+    let addedSpellHistory = 0;
+    for (const item of Array.isArray(payload.data.spellHistory) ? payload.data.spellHistory : []) {
+      if (!item || typeof item.id !== "string" || existingSpellHistoryIds.has(item.id)) continue;
+      spellHistory.push(item);
+      existingSpellHistoryIds.add(item.id);
+      addedSpellHistory += 1;
+    }
+    spellHistory.sort((a,b) => String(b.date || "").localeCompare(String(a.date || "")));
+
     const importedDisabled = new Set(Array.isArray(payload.data.disabledIds) ? payload.data.disabledIds : []);
     for (const id of importedDisabled) disabledIds.add(remapImportedWordId(id, idMap));
     if (importSchemaVersion < 2) {
@@ -3754,6 +4445,7 @@
     save(STORAGE.custom, customWords);
     save(STORAGE.disabled, [...disabledIds]);
     save(STORAGE.history, history);
+    save(STORAGE.spellHistory, spellHistory);
     save(STORAGE.achievements, achievements);
     save(STORAGE.sync, syncState);
     rebuildLearningCachesFromSync();
@@ -3765,7 +4457,7 @@
     renderHistory();
     renderBadges();
     updatePracticeAvailability();
-    return { addedWords, addedHistory, addedSources };
+    return { addedWords, addedHistory, addedSpellHistory, addedSources };
   }
 
   function resetLearningProgress() {
@@ -3794,7 +4486,21 @@
     alert("バッジ実績と挑戦・復習状況をリセットしました。スコア履歴と登録単語は残しています。");
   }
 
+  function renderSpellHistoryReview(record) {
+    const panel = $("#spellHistoryReview");
+    const list = $("#spellHistoryAnswerList");
+    if (!panel || !list || !record) return;
+    $("#spellHistoryReviewTitle").textContent = `スペル特訓の振り返り（${record.length}文字）`;
+    $("#spellHistoryReviewMeta").textContent = `${formatDate(record.date)}・${record.correct}/${record.total}問正解・${record.percent}%`;
+    list.innerHTML = (record.answers || []).map(spellResultAnswerItemHtml).join("");
+    panel.classList.remove("hidden");
+    panel.scrollIntoView({ block:"nearest", behavior:"smooth" });
+  }
+
   function renderHistory() {
+    $("#scoreHistorySummaryCount").textContent = `${history.length}件`;
+    $("#spellHistorySummaryCount").textContent = `${spellHistory.length}件`;
+
     $("#historyTableBody").innerHTML=history.map(h=>{
       const d=h.detail||{reading:[0,0],writing:[0,0],listening:[0,0]};
       const f=k=>`${d[k]?.[0]||0}/${d[k]?.[1]||0}`;
@@ -3806,12 +4512,42 @@
     $$(".delete-history").forEach(x=>x.addEventListener("click",e=>{
       if(confirm("この履歴を削除しますか？")){history=history.filter(h=>h.id!==e.currentTarget.dataset.id);save(STORAGE.history,history);renderHistory();renderHome();}
     }));
+
+    $("#spellHistoryTableBody").innerHTML=spellHistory.map(h=>`<tr>
+      <td>${formatDate(h.date)}</td><td>${h.length}文字</td><td>${h.total}</td><td>${h.correct}</td><td><strong>${h.percent}%</strong></td>
+      <td><div class="inline-actions compact-actions"><button class="secondary view-spell-history" data-id="${h.id}">振り返る</button><button class="danger-outline delete-spell-history" data-id="${h.id}">削除</button></div></td>
+    </tr>`).join("");
+    $("#spellHistoryEmpty").classList.toggle("hidden",spellHistory.length>0);
+    $$(".view-spell-history").forEach(button=>button.addEventListener("click", e=>{
+      const record=spellHistory.find(item=>item.id===e.currentTarget.dataset.id);
+      if(record) renderSpellHistoryReview(record);
+    }));
+    $$(".delete-spell-history").forEach(button=>button.addEventListener("click", e=>{
+      if(!confirm("このスペル特訓履歴を削除しますか？")) return;
+      spellHistory=spellHistory.filter(item=>item.id!==e.currentTarget.dataset.id);
+      save(STORAGE.spellHistory, spellHistory);
+      $("#spellHistoryReview")?.classList.add("hidden");
+      renderHistory();
+    }));
   }
   function initHistory() {
     $("#deleteAllHistory").addEventListener("click",()=>{if(history.length&&confirm("スコア履歴をすべて削除しますか？")){history=[];save(STORAGE.history,history);renderHistory();renderHome();}});
     $("#exportHistory").addEventListener("click",()=>downloadCsv("english_score_history",
       ["date","total","correct","percent","reading_correct","reading_total","writing_correct","writing_total","listening_correct","listening_total"],
       history.map(h=>[formatDate(h.date),h.total,h.correct,h.percent,...(h.detail?.reading||[0,0]),...(h.detail?.writing||[0,0]),...(h.detail?.listening||[0,0])])));
+
+    $("#deleteAllSpellHistory")?.addEventListener("click",()=>{
+      if(spellHistory.length&&confirm("スペル特訓履歴をすべて削除しますか？")){
+        spellHistory=[];
+        save(STORAGE.spellHistory,spellHistory);
+        $("#spellHistoryReview")?.classList.add("hidden");
+        renderHistory();
+      }
+    });
+    $("#exportSpellHistory")?.addEventListener("click",()=>downloadCsv("english_spell_training_history",
+      ["date","length","total","correct","percent"],
+      spellHistory.map(h=>[formatDate(h.date),h.length,h.total,h.correct,h.percent])));
+    $("#closeSpellHistoryReview")?.addEventListener("click",()=>$("#spellHistoryReview")?.classList.add("hidden"));
 
     $("#exportLearningData").addEventListener("click", exportLearningData);
     $("#importLearningData").addEventListener("click", () => $("#importLearningDataFile").click());
@@ -3821,7 +4557,7 @@
       if (!file) return;
       try {
         const result = await importLearningData(file);
-        message.textContent = `マージしました。追加履歴 ${result.addedHistory}件・追加した「あなたの単語」 ${result.addedWords}件・新しい端末データ ${result.addedSources}件。重複データは二重加算していません。`;
+        message.textContent = `マージしました。追加スコア履歴 ${result.addedHistory}件・追加スペル特訓履歴 ${result.addedSpellHistory}件・追加した「あなたの単語」 ${result.addedWords}件・新しい端末データ ${result.addedSources}件。重複データは二重加算していません。`;
         message.className = "note data-message good";
       } catch (error) {
         console.error(error);
@@ -3850,6 +4586,7 @@
     populateTopics();
     initVoiceSettings();
     initPracticeSettings();
+    initSpellTraining();
     initCustomWords();
     initWordList();
     initVoiceSearch();
@@ -3860,6 +4597,11 @@
     renderBadges();
     renderHistory();
     updatePracticeAvailability();
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove("app-loading");
+      const overlay = $("#loadingOverlay");
+      if (overlay) setTimeout(() => overlay.setAttribute("aria-hidden", "true"), 220);
+    });
   }
   document.addEventListener("DOMContentLoaded",init);
 })();
