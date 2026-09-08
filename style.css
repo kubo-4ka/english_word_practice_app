@@ -225,6 +225,13 @@ h2 {
   color: var(--primary);
   background: var(--primary-soft);
 }
+/* v034: 「実験」はβ機能であることが伝わるよう、主タブより文字の主張を少し抑える。 */
+.tab-experiment {
+  color: color-mix(in srgb, var(--muted) 78%, var(--surface));
+}
+.tab-experiment.active {
+  color: color-mix(in srgb, var(--primary) 82%, var(--surface));
+}
 main {
   max-width: 1180px;
   margin: 18px auto 50px;

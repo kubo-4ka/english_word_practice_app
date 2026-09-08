@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "033";
+  const APP_VERSION = "034";
   const DATA_SCHEMA_VERSION = 2;
 
   const STORAGE = {
@@ -1983,7 +1983,7 @@
       </div>
     `).join("");
 
-    seriesArea.innerHTML = achievementSeriesDefinitions().map((series, seriesIndex) => {
+    seriesArea.innerHTML = achievementSeriesDefinitions().map(series => {
       const current = series.value();
       const unlockedInSeries = BADGE_THRESHOLDS.filter(threshold =>
         Boolean(achievements[`${series.key}_${threshold}`])
@@ -2016,7 +2016,7 @@
       }).join("");
 
       return `
-        <details class="achievement-series-card" ${seriesIndex === 0 ? "open" : ""}>
+        <details class="achievement-series-card">
           <summary>
             <div class="achievement-series-title">
               <strong>${escapeHtml(series.title)}</strong>

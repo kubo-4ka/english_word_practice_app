@@ -50,7 +50,9 @@
       <nav class="tabs" aria-label="画面切り替え">
         <button class="tab active" data-screen="home">ホーム</button>
         <button class="tab" data-screen="practice">練習</button>
-        <button class="tab" data-screen="experiment">実験</button>
+        <button class="tab tab-experiment" data-screen="experiment">
+          実験
+        </button>
         <button class="tab" data-screen="words">単語一覧</button>
         <button class="tab" data-screen="badges">バッジ</button>
         <button class="tab" data-screen="history">履歴</button>
@@ -59,35 +61,6 @@
 
       <main>
         <section id="screen-home" class="screen active">
-          <div class="hero card">
-            <div>
-              <span class="pill">小学生向け・基礎英単語</span>
-              <h2>今日の英単語練習を始めましょう</h2>
-              <p>
-                英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と「あなたの単語」から、10〜100問に挑戦できます。
-              </p>
-              <div class="hero-actions">
-                <button id="startRecommendedHome" class="primary">
-                  おすすめ設定で始める
-                </button>
-                <button class="secondary" data-go="practice">練習設定へ</button>
-              </div>
-            </div>
-            <div class="hero-stats">
-              <div>
-                <strong id="homeActiveWords">0</strong><span>出題対象単語</span>
-              </div>
-              <div>
-                <strong id="homeHistoryCount">0</strong
-                ><span>保存済み履歴</span>
-              </div>
-              <div>
-                <strong id="homeBadgeProgress">0/58</strong
-                ><span>獲得バッジ</span>
-              </div>
-            </div>
-          </div>
-
           <article
             class="card home-random-word"
             aria-labelledby="homeRandomTitle"
@@ -124,6 +97,35 @@
               ></p>
             </div>
           </article>
+
+          <div class="hero card">
+            <div>
+              <span class="pill">小学生向け・基礎英単語</span>
+              <h2>今日の英単語練習を始めましょう</h2>
+              <p>
+                英単語の読み・書き・聞き取りを四択で練習するアプリです。プリセット単語と「あなたの単語」から、10〜100問に挑戦できます。
+              </p>
+              <div class="hero-actions">
+                <button id="startRecommendedHome" class="primary">
+                  おすすめ設定で始める
+                </button>
+                <button class="secondary" data-go="practice">練習設定へ</button>
+              </div>
+            </div>
+            <div class="hero-stats">
+              <div>
+                <strong id="homeActiveWords">0</strong><span>出題対象単語</span>
+              </div>
+              <div>
+                <strong id="homeHistoryCount">0</strong
+                ><span>保存済み履歴</span>
+              </div>
+              <div>
+                <strong id="homeBadgeProgress">0/58</strong
+                ><span>獲得バッジ</span>
+              </div>
+            </div>
+          </div>
 
           <div class="feature-grid">
             <article class="card feature">
