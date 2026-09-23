@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#3569c9" />
+    <meta
+      name="description"
+      content="読む・書く・聞くをくり返し練習できる英単語学習アプリ"
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="英単語" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="icons/icon-192.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="icons/apple-touch-icon.png"
+    />
     <title>英単語 よみ・かき・リスニング</title>
     <script>
       try {
@@ -10,7 +31,7 @@
           localStorage.getItem("ewp_theme_v1") || "1";
       } catch (_) {}
     </script>
-    <link rel="stylesheet" href="style.css?v=032" />
+    <link rel="stylesheet" href="style.css?v=035" />
   </head>
   <body>
     <div
@@ -1076,6 +1097,18 @@
               localStorage
               に保存します。ブラウザデータを消去すると失われます。「履歴」タブの学習データ出力では、履歴・挑戦状況・バッジ実績などをJSONに保存し、別端末では「マージ読込」で統合できます。同じ端末データを再読込しても、端末別の累計を基準に二重加算しないようにしています。
             </p>
+            <h3>8. ホーム画面へ追加・オフライン利用</h3>
+            <p>
+              GitHub
+              PagesなどHTTPSで公開したページを一度オンラインで開くと、このアプリの主要ファイルを端末へ保存します。Android
+              /
+              Chrome系ではブラウザメニューの「アプリをインストール」または「ホーム画面に追加」、iPhone
+              /
+              iPadのSafariでは共有メニューの「ホーム画面に追加」から、アプリのように起動できます。ブラウザによって表示名は多少異なります。
+            </p>
+            <p>
+              初回読み込みが完了した後は、機内モードなどでも単語一覧・四択練習・履歴・バッジ・スペル特訓などの基本機能を利用できます。ただし、オンライン音声や音声検索など、OS・ブラウザ側で通信を必要とする機能はオフラインでは利用できない場合があります。アプリを更新した場合は、一度オンラインで開くと新しいファイルを取得します。
+            </p>
           </div>
         </section>
       </main>
@@ -1087,6 +1120,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=032"></script>
+    <script src="app.js?v=035"></script>
   </body>
 </html>

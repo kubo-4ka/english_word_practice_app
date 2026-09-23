@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "034";
+  const APP_VERSION = "035";
   const DATA_SCHEMA_VERSION = 2;
 
   const STORAGE = {
@@ -4604,4 +4604,12 @@
     });
   }
   document.addEventListener("DOMContentLoaded",init);
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+        console.warn("Service Worker registration failed:", error);
+      });
+    }, { once:true });
+  }
 })();

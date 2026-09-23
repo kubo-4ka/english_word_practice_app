@@ -9,8 +9,23 @@ https://kubo-4ka.github.io/english_word_practice_app/
 
 ## 起動方法
 
-`index.html` をブラウザで開いてください。
-比較的新しい Chrome / Edge / Firefox / Safari を推奨します。基本機能は `file://` でも利用できます。
+通常利用は `index.html` をブラウザで開くだけです。
+比較的新しい Chrome / Edge / Firefox / Safari を推奨します。
+
+PWA としてのインストールとオフライン利用は、GitHub Pages など **HTTPS** で公開した状態で利用してください。`file://` で開いた場合は Service Worker を利用できません。
+
+## ホーム画面への追加・オフライン利用
+
+GitHub Pages 等へ配置してオンラインで一度開くと、アプリ本体の主要ファイルを端末へキャッシュします。
+
+- Android / Chrome 系：ブラウザメニューの「アプリをインストール」または「ホーム画面に追加」
+- iPhone / iPad / Safari：共有メニューの「ホーム画面に追加」
+- PC の Chrome / Edge：対応環境ではアドレスバーやブラウザメニューからインストール
+
+初回読み込みが完了した後は、機内モードなどでも単語一覧、四択練習、履歴、バッジ、スペル特訓などの基本機能を利用できます。
+ただし、端末側でオンライン処理される音声や音声検索は、オフラインでは利用できない場合があります。
+
+アプリを改版した場合は、端末をオンラインにして一度ページを開くと新しいファイルを取得します。
 
 ## 主な機能
 
@@ -29,6 +44,7 @@ https://kubo-4ka.github.io/english_word_practice_app/
 - 5 種類の画面テーマ
 - ブラウザ標準の音声読み上げ
 - 対応環境での音声検索（β）
+- PWA インストール / オフライン起動
 
 ## データ保存
 
@@ -41,13 +57,22 @@ https://kubo-4ka.github.io/english_word_practice_app/
 ## ファイル構成
 
 ```text
-english_word_practice_app_v034/
+english_word_practice_app_v035/
 ├─ index.html
 ├─ style.css
 ├─ app.js
-└─ README.md
+├─ manifest.webmanifest
+├─ service-worker.js
+├─ README.md
+└─ icons/
+    ├─ icon-192.png
+    ├─ icon-512.png
+    └─ apple-touch-icon.png
 ```
 
-- `index.html`：画面構成
+- `index.html`：画面構成、PWA メタ情報
 - `style.css`：デザイン・レスポンシブ表示
-- `app.js`：単語データ、出題、音声、履歴、バッジ、保存処理
+- `app.js`：単語データ、出題、音声、履歴、バッジ、保存処理、Service Worker 登録
+- `manifest.webmanifest`：ホーム画面追加・インストール用情報
+- `service-worker.js`：オフライン利用用キャッシュ
+- `icons/`：ホーム画面・インストール用アイコン
