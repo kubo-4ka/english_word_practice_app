@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#3569c9" />
+    <meta name="theme-color" content="#f2f5f8" />
     <meta
       name="description"
       content="読む・書く・聞くをくり返し練習できる英単語学習アプリ"
@@ -26,12 +26,27 @@
     />
     <title>英単語 よみ・かき・リスニング</title>
     <script>
-      try {
-        document.documentElement.dataset.theme =
-          localStorage.getItem("ewp_theme_v1") || "1";
-      } catch (_) {}
+      (() => {
+        const chromeColors = {
+          1: "#f2f5f8",
+          2: "#f4f0fa",
+          3: "#ded0b5",
+          4: "#5f6469",
+          5: "#10141a",
+        };
+        try {
+          const theme = localStorage.getItem("ewp_theme_v1") || "1";
+          document.documentElement.dataset.theme = theme;
+          const themeColor = document.querySelector('meta[name="theme-color"]');
+          if (themeColor)
+            themeColor.setAttribute(
+              "content",
+              chromeColors[theme] || chromeColors["1"]
+            );
+        } catch (_) {}
+      })();
     </script>
-    <link rel="stylesheet" href="style.css?v=035" />
+    <link rel="stylesheet" href="style.css?v=036" />
   </head>
   <body>
     <div
@@ -1120,6 +1135,6 @@
       </footer>
     </div>
 
-    <script src="app.js?v=035"></script>
+    <script src="app.js?v=036"></script>
   </body>
 </html>

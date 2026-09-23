@@ -72,6 +72,14 @@ html,
 body {
   height: 100%;
 }
+html {
+  background: var(--bg);
+  color-scheme: light;
+}
+html[data-theme="4"],
+html[data-theme="5"] {
+  color-scheme: dark;
+}
 body {
   margin: 0;
   height: 100dvh;

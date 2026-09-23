@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const APP_VERSION = "035";
+  const APP_VERSION = "036";
   const DATA_SCHEMA_VERSION = 2;
 
   const STORAGE = {
@@ -2608,13 +2608,30 @@
     if (name === "practice") updatePracticeAvailability();
   }
 
+  const THEME_CHROME_COLORS = {
+    "1": "#f2f5f8",
+    "2": "#f4f0fa",
+    "3": "#ded0b5",
+    "4": "#5f6469",
+    "5": "#10141a"
+  };
+
+  function syncBrowserThemeColor(value) {
+    const color = THEME_CHROME_COLORS[value] || THEME_CHROME_COLORS["1"];
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", color);
+  }
+
   function initTheme() {
     const value = localStorage.getItem(STORAGE.theme) || "1";
     document.documentElement.dataset.theme = value;
+    syncBrowserThemeColor(value);
     $("#themeSelect").value = value;
     $("#themeSelect").addEventListener("change", e => {
-      document.documentElement.dataset.theme = e.target.value;
-      localStorage.setItem(STORAGE.theme, e.target.value);
+      const nextTheme = e.target.value;
+      document.documentElement.dataset.theme = nextTheme;
+      syncBrowserThemeColor(nextTheme);
+      localStorage.setItem(STORAGE.theme, nextTheme);
     });
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "英単語 よみ・かき・リスニング",
-  "short_name": "英単語",
+  "short_name": "英単語練習帳",
   "description": "読む・書く・聞くをくり返し練習できる英単語学習アプリ",
   "lang": "ja",
   "id": "./",
@@ -8,7 +8,7 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#f2f5f8",
-  "theme_color": "#3569c9",
+  "theme_color": "#f2f5f8",
   "categories": ["education"],
   "icons": [
     {

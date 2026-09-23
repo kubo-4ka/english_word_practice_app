@@ -1,9 +1,9 @@
-const CACHE_NAME = "english-word-practice-v035";
+const CACHE_NAME = "english-word-practice-v036";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./style.css?v=035",
-  "./app.js?v=035",
+  "./style.css?v=036",
+  "./app.js?v=036",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

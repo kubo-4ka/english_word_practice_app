@@ -16,7 +16,7 @@ PWA としてのインストールとオフライン利用は、GitHub Pages な
 
 ## ホーム画面への追加・オフライン利用
 
-GitHub Pages 等へ配置してオンラインで一度開くと、アプリ本体の主要ファイルを端末へキャッシュします。
+GitHub Pages へ配置してオンラインで一度開くと、アプリ本体の主要ファイルを端末へキャッシュします。
 
 - Android / Chrome 系：ブラウザメニューの「アプリをインストール」または「ホーム画面に追加」
 - iPhone / iPad / Safari：共有メニューの「ホーム画面に追加」
@@ -64,10 +64,12 @@ english_word_practice_app_v035/
 ├─ manifest.webmanifest
 ├─ service-worker.js
 ├─ README.md
-└─ icons/
-    ├─ icon-192.png
-    ├─ icon-512.png
-    └─ apple-touch-icon.png
+├─ icons/
+│  ├─ icon-192.png
+│  ├─ icon-512.png
+│  └─ apple-touch-icon.png
+└─ docs/
+   └─ CHANGELOG.md
 ```
 
 - `index.html`：画面構成、PWA メタ情報
@@ -76,3 +78,8 @@ english_word_practice_app_v035/
 - `manifest.webmanifest`：ホーム画面追加・インストール用情報
 - `service-worker.js`：オフライン利用用キャッシュ
 - `icons/`：ホーム画面・インストール用アイコン
+- `docs/CHANGELOG.md`：改版履歴
+
+## 改版履歴
+
+改版内容は [`docs/CHANGELOG.md`](docs/CHANGELOG.md) にまとめています。
